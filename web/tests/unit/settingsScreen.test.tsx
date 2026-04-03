@@ -29,6 +29,7 @@ describe('SettingsScreen', () => {
         onDeleteAll={vi.fn()}
         onExport={vi.fn()}
         onImport={vi.fn()}
+        sessionModeLabel="Guest on this device"
       />,
     )
 
@@ -43,6 +44,15 @@ describe('SettingsScreen', () => {
     ).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: /restore recovery file/i }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/support resources/i),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: /call or text 988/i }),
+    ).toHaveAttribute('href', 'https://988lifeline.org/get-help/')
+    expect(
+      screen.getByRole('heading', { name: /identity/i }),
     ).toBeInTheDocument()
   })
 
@@ -89,5 +99,25 @@ describe('SettingsScreen', () => {
     expect(
       screen.getByRole('button', { name: /restoring recovery file/i }),
     ).toBeDisabled()
+  })
+
+  it('renders manual install guidance for browsers without an install prompt', () => {
+    render(
+      <SettingsScreen
+        isDeleting={false}
+        isExporting={false}
+        isImporting={false}
+        onDeleteAll={vi.fn()}
+        onExport={vi.fn()}
+        onImport={vi.fn()}
+      />,
+    )
+
+    expect(
+      screen.getByRole('heading', { name: /add notes to your home screen/i }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/safari share menu/i),
+    ).toBeInTheDocument()
   })
 })

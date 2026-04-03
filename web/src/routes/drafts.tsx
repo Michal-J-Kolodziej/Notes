@@ -1,6 +1,12 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { useEntryStore, type EntryRecord } from '~/features/entries'
+import {
+  EntryListCard,
+  useEntryStore,
+  useForeignEntryStoreMutationVersion,
+  useRelativeTimeNow,
+  type EntryRecord,
+} from '~/features/entries'
 
 export const Route = createFileRoute('/drafts')({
   component: DraftsRoute,
@@ -8,10 +14,18 @@ export const Route = createFileRoute('/drafts')({
 
 function DraftsRoute() {
   const store = useEntryStore()
+  const foreignMutationVersion = useForeignEntryStoreMutationVersion()
+  const now = useRelativeTimeNow()
   const [entries, setEntries] = useState<EntryRecord[]>([])
 
   useEffect(() => {
+    let active = true
+
     void store.listEntries().then((items) => {
+      if (!active) {
+        return
+      }
+
       setEntries(
         items.filter((item) =>
           ['draft_local', 'recording', 'processing', 'review_ready', 'needs_retry'].includes(
@@ -20,7 +34,11 @@ function DraftsRoute() {
         ),
       )
     })
-  }, [store])
+
+    return () => {
+      active = false
+    }
+  }, [foreignMutationVersion, store])
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-[34rem] flex-col gap-5 px-4 py-6 sm:px-6">
@@ -44,21 +62,13 @@ function DraftsRoute() {
           ) : (
             entries.map((entry) => (
               <Link
-                className="rounded-[1.25rem] border border-[rgba(58,34,29,0.1)] bg-white/80 p-4"
+                className="block"
                 key={entry.id}
                 params={{ noteId: entry.id }}
                 search={{ mode: entry.sourceType }}
                 to="/note/$noteId"
               >
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-                  {entry.status.replace('_', ' ')}
-                </p>
-                <h2 className="mt-2 text-lg font-semibold text-[var(--ink)]">
-                  {entry.title || 'Untitled draft'}
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                  {entry.transcript || 'Still empty.'}
-                </p>
+                <EntryListCard entry={entry} now={now} />
               </Link>
             ))
           )}

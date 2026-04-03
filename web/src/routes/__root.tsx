@@ -7,6 +7,8 @@ import {
 import * as React from 'react'
 import appCss from '~/styles/app.css?url'
 import { EntryStoreProvider } from '~/features/entries'
+import { AppPlatformEffects } from '~/features/pwa/AppPlatformEffects'
+import { ConnectionStatusBanner } from '~/features/pwa/ConnectionStatusBanner'
 
 export const Route = createRootRoute({
   head: () => ({
@@ -17,6 +19,18 @@ export const Route = createRootRoute({
       {
         name: 'viewport',
         content: 'width=device-width, initial-scale=1',
+      },
+      {
+        name: 'theme-color',
+        content: '#f4eee9',
+      },
+      {
+        name: 'apple-mobile-web-app-capable',
+        content: 'yes',
+      },
+      {
+        name: 'apple-mobile-web-app-status-bar-style',
+        content: 'default',
       },
       {
         title: 'Notes',
@@ -52,6 +66,8 @@ export const Route = createRootRoute({
 function RootComponent() {
   return (
     <RootDocument>
+      <AppPlatformEffects />
+      <ConnectionStatusBanner />
       <EntryStoreProvider>
         <Outlet />
       </EntryStoreProvider>

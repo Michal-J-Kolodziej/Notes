@@ -47,3 +47,27 @@
 - Code paths changed: `web/src/features/entries/types.ts`, `web/src/features/entries/localStore.ts`, `web/src/features/settings/restoreLocalEntries.ts`, `web/src/features/settings/SettingsScreen.tsx`, `web/src/routes/settings.tsx`, `web/src/routes/note/$noteId.tsx`, `web/tests/unit/restoreLocalEntries.test.ts`, `web/tests/unit/settingsScreen.test.tsx`, `web/tests/unit/entryStore.test.ts`, `web/tests/e2e/import-recovery.spec.ts`, `web/tests/e2e/helpers/localEntryDb.ts`, `web/tests/e2e/audio-only-delete.spec.ts`, `web/tests/e2e/privacy-controls.spec.ts`, `web/tests/e2e/voice-discard.spec.ts`
 - Docs updated: `docs/codebase-reference.md`, `docs/specs/notes-app-core-mvp.md`, `docs/change-log.md`
 - Impact: added validated recovery-file restore with atomic local snapshot replacement, moved recorded-audio persistence onto the store's atomic save path, and consolidated browser storage seeding behind a shared Playwright harness while strengthening route-level audio-delete verification.
+
+## 2026-04-03
+
+- Code paths changed: `web/src/features/ui/ConfirmationSheet.tsx`, `web/src/features/entries/removeStoredAudio.ts`, `web/src/features/entries/index.ts`, `web/src/routes/settings.tsx`, `web/src/routes/note/$noteId.tsx`, `web/src/features/settings/SettingsScreen.tsx`, `web/tests/unit/confirmationSheet.test.tsx`, `web/tests/unit/removeStoredAudioFromEntry.test.ts`, `web/tests/unit/settingsScreen.test.tsx`, `web/tests/e2e/audio-only-delete.spec.ts`, `web/tests/e2e/privacy-controls.spec.ts`, `web/tests/e2e/import-recovery.spec.ts`
+- Docs updated: `docs/codebase-reference.md`, `docs/specs/notes-app-core-mvp.md`, `docs/change-log.md`
+- Impact: replaced browser-native destructive confirms with an accessible in-app confirmation sheet, added direct logic coverage for stored-audio removal after queued edits, and exposed official support resources in Settings with explicit crisis-care disclaimers.
+
+## 2026-04-03
+
+- Code paths changed: `web/src/features/ui/ConfirmationSheet.tsx`, `web/src/routes/note/$noteId.tsx`, `web/tests/unit/confirmationSheet.test.tsx`, `web/tests/e2e/replace-recording-failure.spec.ts`
+- Docs updated: `docs/codebase-reference.md`, `docs/change-log.md`
+- Impact: fixed rerecord failure so the previous retained audio stays attached until a replacement is durably saved, and tightened the confirmation sheet so keyboard focus stays inside the modal and returns to the triggering control on close.
+
+## 2026-04-03
+
+- Code paths changed: `web/src/features/entries/storeMutationEvents.ts`, `web/src/features/entries/localStore.ts`, `web/src/features/entries/index.ts`, `web/src/routes/drafts.tsx`, `web/src/routes/recent.tsx`, `web/src/routes/settings.tsx`, `web/src/routes/note/$noteId.tsx`, `web/tests/unit/storeMutationPublishing.test.ts`, `web/tests/e2e/cross-tab-refresh.spec.ts`, `web/tests/e2e/import-recovery.spec.ts`
+- Docs updated: `docs/codebase-reference.md`, `docs/specs/notes-app-core-mvp.md`, `docs/change-log.md`
+- Impact: narrowed cross-tab invalidation to destructive local changes so other tabs refresh after delete or restore without reloading on every draft save, replaced stale open-note editors with an explicit unavailable-note state after foreign delete or restore, and locked recovery import failures to fail closed without replacing current local notes.
+
+## 2026-04-03
+
+- Code paths changed: `web/public/site.webmanifest`, `web/public/sw.js`, `web/src/features/pwa/AppPlatformEffects.tsx`, `web/src/features/pwa/useAppInstallPrompt.ts`, `web/src/features/pwa/ConnectionStatusBanner.tsx`, `web/src/features/capture/HomeScreen.tsx`, `web/src/features/settings/SettingsScreen.tsx`, `web/src/routes/__root.tsx`, `web/src/routes/index.tsx`, `web/src/routes/settings.tsx`, `web/src/features/entries/EntryListCard.tsx`, `web/src/features/entries/index.ts`, `web/src/routes/drafts.tsx`, `web/src/routes/recent.tsx`, `web/tests/unit/entryListCard.test.tsx`, `web/tests/e2e/pwa-basics.spec.ts`, `web/tests/e2e/list-metadata.spec.ts`
+- Docs updated: `docs/codebase-reference.md`, `docs/specs/notes-app-core-mvp.md`, `docs/change-log.md`
+- Impact: added real installability basics with concrete manifest metadata, service-worker registration, cached offline shell reload, Home install CTA exposure, and manual iPhone/iPad install guidance, while also adding explicit relative-time metadata to Drafts and Recent so retrieval is faster to scan on mobile.

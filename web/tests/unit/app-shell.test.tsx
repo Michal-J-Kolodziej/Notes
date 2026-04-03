@@ -22,4 +22,26 @@ describe('HomeScreen', () => {
       screen.getByRole('link', { name: /recent/i }),
     ).toBeInTheDocument()
   })
+
+  it('renders install actions when install is available', () => {
+    render(
+      <HomeScreen
+        installState={{
+          kind: 'installable',
+          onDismiss: () => {},
+          onInstall: async () => {},
+        }}
+      />,
+    )
+
+    expect(
+      screen.getByRole('heading', { name: /keep notes one tap away/i }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /install app/i }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /not now/i }),
+    ).toBeInTheDocument()
+  })
 })

@@ -17,13 +17,17 @@ Implemented:
 - Drafts and Recent screens backed by local persisted entries
 - Local export and full-device delete controls in Settings
 - Recovery-file restore that replaces local notes from a validated exported snapshot
+- Support-resources path in Settings with clear crisis-care disclaimer
 - Audio-only delete semantics for stored voice-note audio while preserving the note transcript
+- Cross-tab refresh for local delete or restore so stale Recent, Drafts, Settings, and note views do not keep pretending old device data still exists
+- Basic installability: concrete manifest, service-worker registration, cached shell reload, Home install prompt when supported, manual iPhone/iPad install guidance, and explicit offline-state messaging
+- Relative last-updated metadata in Drafts and Recent for faster mobile retrieval
 
 Still intentionally deferred:
 
 - Remote sync
 - Search
-- PWA installability hardening
+- Full offline-first launch hardening beyond the current cached app shell
 
 Current Milestone 1 constraint:
 
@@ -70,6 +74,7 @@ These states are product-facing, not just engineering internals. The UI must rev
 - Drafts list
 - Local export and full-device delete controls
 - Recovery-file restore from a previously exported snapshot
+- Support-resources path in Settings
 - Audio-only delete for retained voice-note audio
 - Clear retry for failed processing or sync
 
@@ -220,6 +225,10 @@ Do not move into public launch hardening until:
 - Processing failure retry
 - Draft survives refresh
 - Recent list updates after save
+- Recent, Drafts, and open note views exit stale state after local delete or restore from another tab
+- Manifest and service-worker registration are present for installable browsers
+- Offline reload keeps the cached shell usable and explains that local notes still work on this device
+- Draft and recent cards expose visible last-updated metadata on mobile
 
 ## Public Launch Additions That Build On Core MVP
 
@@ -228,5 +237,5 @@ These depend on Core MVP but are not part of Core MVP completion:
 - Authenticated sync
 - Search over saved entries
 - Export and delete controls
-- PWA installability
+- Deeper offline installability hardening
 - Formal privacy controls in settings

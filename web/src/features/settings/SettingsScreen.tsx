@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { useId, useRef } from 'react'
 
 interface SettingsScreenProps {
+  installState?: 'hidden' | 'installable' | 'installed' | 'manual_ios'
   isDeleting: boolean
   isExporting: boolean
   isImporting: boolean
@@ -15,6 +16,7 @@ interface SettingsScreenProps {
 }
 
 export function SettingsScreen({
+  installState = 'hidden',
   isDeleting,
   isExporting,
   isImporting,
@@ -61,6 +63,63 @@ export function SettingsScreen({
         ) : null}
 
         <div className="mt-5 grid gap-4">
+          <section className="rounded-[1.5rem] border border-[rgba(58,34,29,0.1)] bg-white/75 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">
+              Install
+            </p>
+            <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-[var(--ink)]">
+              Add Notes to your home screen.
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+              {installState === 'installed'
+                ? 'This app is already installed on this device.'
+                : installState === 'installable'
+                  ? 'Your browser can install this app now. Use the install action on Home or the browser install control.'
+                  : installState === 'manual_ios'
+                    ? 'On iPhone or iPad, use the browser Share menu and choose Add to Home Screen when install is not offered automatically.'
+                    : 'When your browser supports install prompts, Notes can open in a cleaner app shell with its own icon.'}
+            </p>
+            <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+              On iPhone or iPad, open this app in Safari, use the Safari Share
+              menu, then choose Add to Home Screen.
+            </p>
+          </section>
+
+          <section className="rounded-[1.5rem] border border-[rgba(58,34,29,0.1)] bg-white/75 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">
+              Support resources
+            </p>
+            <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-[var(--ink)]">
+              Reach real support when you need it.
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+              If you are in the U.S. and need immediate emotional support, use
+              official crisis resources. This app does not provide crisis care.
+            </p>
+            <div className="mt-4 grid gap-3">
+              <a
+                className="rounded-[1rem] border border-[rgba(58,34,29,0.12)] bg-white px-4 py-3 text-sm font-semibold text-[var(--ink)]"
+                href="https://988lifeline.org/get-help/"
+                rel="noreferrer"
+                target="_blank"
+              >
+                Call or text 988
+              </a>
+              <a
+                className="rounded-[1rem] border border-[rgba(58,34,29,0.12)] bg-white px-4 py-3 text-sm font-semibold text-[var(--ink)]"
+                href="https://findtreatment.gov/"
+                rel="noreferrer"
+                target="_blank"
+              >
+                FindTreatment.gov
+              </a>
+            </div>
+            <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+              If you are outside the U.S., use local emergency or crisis
+              support services in your area.
+            </p>
+          </section>
+
           <section className="rounded-[1.5rem] border border-[rgba(58,34,29,0.1)] bg-white/75 p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">
               Restore

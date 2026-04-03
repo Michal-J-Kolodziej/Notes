@@ -43,8 +43,11 @@ test('stored audio can be removed while keeping the note transcript', async ({
     .getByLabel(/review note/i)
     .fill(`${unique} transcript edited before audio removal`)
 
-  page.once('dialog', (dialog) => dialog.accept())
   await page.getByRole('button', { name: /remove stored audio/i }).click()
+  await expect(
+    page.getByRole('dialog', { name: /remove stored audio/i }),
+  ).toBeVisible()
+  await page.getByRole('button', { name: /remove audio/i }).click()
 
   await expect(
     page.getByText(/stored as transcript text only on this device/i),

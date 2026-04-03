@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import type { AppInstallState } from '~/features/pwa/useAppInstallPrompt'
 
 function ActionLink({
   children,
@@ -40,7 +41,11 @@ function NavLink({
   )
 }
 
-export function HomeScreen() {
+export function HomeScreen({
+  installState = { kind: 'hidden' },
+}: {
+  installState?: AppInstallState
+}) {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-[34rem] flex-col gap-6 px-4 py-6 sm:px-6">
       <section className="rounded-[2rem] border border-[rgba(255,255,255,0.45)] bg-[var(--panel)] p-6 shadow-[0_24px_80px_rgba(38,23,18,0.12)]">
@@ -54,6 +59,40 @@ export function HomeScreen() {
           Speak it, type it, save it, and come back to it later without losing
           the thread.
         </p>
+
+        {installState.kind === 'installable' ? (
+          <div className="mt-5 rounded-[1.35rem] border border-[rgba(58,34,29,0.1)] bg-white/82 p-4 shadow-[0_12px_30px_rgba(40,28,25,0.06)]">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-xl font-semibold tracking-[-0.03em] text-[var(--ink)]">
+                  Keep Notes one tap away.
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
+                  Keep capture one tap away and reopen notes in a cleaner app
+                  shell.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  className="inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white"
+                  onClick={() => {
+                    void installState.onInstall()
+                  }}
+                  type="button"
+                >
+                  Install app
+                </button>
+                <button
+                  className="inline-flex min-h-11 items-center justify-center rounded-full border border-[rgba(58,34,29,0.12)] bg-white px-4 py-2 text-sm font-semibold text-[var(--ink)]"
+                  onClick={installState.onDismiss}
+                  type="button"
+                >
+                  Not now
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         <div className="mt-6 grid gap-3">
           <ActionLink href="/note/new?mode=voice" variant="primary">

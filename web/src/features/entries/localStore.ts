@@ -12,6 +12,7 @@ import {
   openEntryDatabase,
   type StoredAudioFileRecord,
 } from '~/lib/platform/indexedDb'
+import { publishEntryStoreMutation } from './storeMutationEvents'
 
 function cloneEntry(entry: EntryRecord): EntryRecord {
   return structuredClone(entry)
@@ -161,8 +162,16 @@ export function createMemoryEntryStore(): EntryStore {
         Array.from(entries.values(), (entry) => cloneEntry(entry)),
       )
     },
-    deleteEntry(id) {
-      return clearAudioForEntry(id)
+    async deleteEntry(id) {
+      const hadEntry = entries.has(id)
+      await clearAudioForEntry(id)
+
+      if (hadEntry) {
+        publishEntryStoreMutation({
+          entryId: id,
+          kind: 'entry_deleted',
+        })
+      }
     },
     async getEntryAudio(audioFileId) {
       const blob = audioFiles.get(audioFileId)
@@ -180,12 +189,22 @@ export function createMemoryEntryStore(): EntryStore {
     async deleteAudioFile(id) {
       audioFiles.delete(id)
     },
-    replaceAll(snapshot) {
-      return replaceAll(snapshot)
+    async replaceAll(snapshot) {
+      await replaceAll(snapshot)
+      publishEntryStoreMutation({
+        kind: 'store_replaced',
+      })
     },
     async clear() {
+      const hadLocalData = entries.size > 0 || audioFiles.size > 0
       entries.clear()
       audioFiles.clear()
+
+      if (hadLocalData) {
+        publishEntryStoreMutation({
+          kind: 'store_cleared',
+        })
+      }
     },
   }
 }
@@ -313,8 +332,16 @@ export async function createLocalEntryStore(
         const entries = await database.getAll(ENTRY_STORE_NAME)
         return sortEntriesByUpdatedAtDesc(entries.map(cloneEntry))
       },
-      deleteEntry(id) {
-        return clearAudioForEntry(id)
+      async deleteEntry(id) {
+        const existing = await database.get(ENTRY_STORE_NAME, id)
+        await clearAudioForEntry(id)
+
+        if (existing) {
+          publishEntryStoreMutation({
+            entryId: id,
+            kind: 'entry_deleted',
+          })
+        }
       },
       getEntryAudio(audioFileId) {
         return readAudio(audioFileId)
@@ -333,10 +360,15 @@ export async function createLocalEntryStore(
       async deleteAudioFile(id) {
         await database.delete(ENTRY_AUDIO_STORE_NAME, id)
       },
-      replaceAll(snapshot) {
-        return replaceAll(snapshot)
+      async replaceAll(snapshot) {
+        await replaceAll(snapshot)
+        publishEntryStoreMutation({
+          kind: 'store_replaced',
+        })
       },
       async clear() {
+        const existingEntries = await database.count(ENTRY_STORE_NAME)
+        const existingAudioFiles = await database.count(ENTRY_AUDIO_STORE_NAME)
         const tx = database.transaction(
           [ENTRY_STORE_NAME, ENTRY_AUDIO_STORE_NAME],
           'readwrite',
@@ -344,6 +376,12 @@ export async function createLocalEntryStore(
         await tx.objectStore(ENTRY_STORE_NAME).clear()
         await tx.objectStore(ENTRY_AUDIO_STORE_NAME).clear()
         await tx.done
+
+        if (existingEntries > 0 || existingAudioFiles > 0) {
+          publishEntryStoreMutation({
+            kind: 'store_cleared',
+          })
+        }
       },
     }
   } catch (error) {

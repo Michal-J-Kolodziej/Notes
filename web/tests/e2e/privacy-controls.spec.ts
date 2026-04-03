@@ -85,8 +85,12 @@ test('settings can export local notes and delete all retained local data', async
     }),
   ])
 
-  page.once('dialog', (dialog) => dialog.accept())
   await page.getByRole('button', { name: /delete all local notes/i }).click()
+  const deleteDialog = page.getByRole('dialog', {
+    name: /delete all local notes from this device/i,
+  })
+  await expect(deleteDialog).toBeVisible()
+  await deleteDialog.getByRole('button', { name: /delete all local notes/i }).click()
 
   await expect(
     page.getByText(/all local notes and retained audio were deleted/i),

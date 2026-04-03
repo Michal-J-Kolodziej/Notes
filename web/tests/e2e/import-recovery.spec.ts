@@ -11,6 +11,7 @@ test('settings can restore a downloaded recovery file back into local storage', 
   const voiceId = `voice-${unique}`
   const draftId = `draft-${unique}`
   const retainedAudioId = `audio-${voiceId}`
+  const staleNoteTitle = `stale local ${unique}`
 
   await page.goto('/')
   await localEntryDb.seed(
@@ -61,14 +62,28 @@ test('settings can restore a downloaded recovery file back into local storage', 
   const downloadPath = await download.path()
   expect(downloadPath).not.toBeNull()
 
-  page.once('dialog', (dialog) => dialog.accept())
-  await page.getByRole('button', { name: /delete all local notes/i }).click()
-  await expect(
-    page.getByText(/all local notes and retained audio were deleted/i),
-  ).toBeVisible()
+  await localEntryDb.seed({
+    entry: {
+      audioFileId: null,
+      createdAt: timestamp + 200,
+      deviceLocalId: `device-stale-${unique}`,
+      hasAudio: false,
+      id: `stale-${unique}`,
+      ownerMode: 'guest_local',
+      sourceType: 'text',
+      status: 'saved_local',
+      storageMode: 'transcript_only',
+      title: staleNoteTitle,
+      transcript: `${staleNoteTitle} transcript`,
+      updatedAt: timestamp + 200,
+    },
+  })
 
-  page.once('dialog', (dialog) => dialog.accept())
   await page.locator('input[type="file"]').setInputFiles(downloadPath!)
+  await expect(
+    page.getByRole('dialog', { name: /replace local notes with this recovery file/i }),
+  ).toBeVisible()
+  await page.getByRole('button', { name: /replace local notes/i }).click()
 
   await expect(
     page.getByText(/recovery file restored 2 notes and 1 retained audio item/i),
@@ -79,8 +94,53 @@ test('settings can restore a downloaded recovery file back into local storage', 
   await expect(
     page.getByRole('link').filter({ hasText: voiceTitle }).first(),
   ).toBeVisible()
+  await expect(page.getByText(staleNoteTitle)).toHaveCount(0)
   await page.goto('/drafts')
   await expect(
     page.getByRole('link').filter({ hasText: draftTitle }).first(),
   ).toBeVisible()
+})
+
+test('invalid recovery files fail closed and keep current local notes intact', async ({
+  page,
+  localEntryDb,
+}) => {
+  const unique = `${Date.now()}`
+  const noteTitle = `recovery intact ${unique}`
+  const entryId = `recovery-${unique}`
+  const timestamp = Date.now()
+
+  await page.goto('/')
+  await localEntryDb.seed({
+    entry: {
+      audioFileId: null,
+      createdAt: timestamp,
+      deviceLocalId: `device-${entryId}`,
+      hasAudio: false,
+      id: entryId,
+      ownerMode: 'guest_local',
+      sourceType: 'text',
+      status: 'saved_local',
+      storageMode: 'transcript_only',
+      title: noteTitle,
+      transcript: `${noteTitle} transcript`,
+      updatedAt: timestamp,
+    },
+  })
+
+  await page.goto('/settings')
+  await page.locator('input[type="file"]').setInputFiles({
+    buffer: Buffer.from('{not-json', 'utf8'),
+    mimeType: 'application/json',
+    name: 'invalid-recovery.json',
+  })
+  await expect(
+    page.getByRole('dialog', { name: /replace local notes with this recovery file/i }),
+  ).toBeVisible()
+  await page.getByRole('button', { name: /replace local notes/i }).click()
+
+  await expect(page.getByText(/recovery file is not valid json/i)).toBeVisible()
+
+  await page.goto('/recent')
+  await expect(page.getByRole('link').filter({ hasText: noteTitle }).first()).toBeVisible()
 })
