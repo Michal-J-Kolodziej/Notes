@@ -1,0 +1,22 @@
+- main [ref=e2]:
+  - generic [ref=e3]:
+    - paragraph [ref=e4]: Note workspace
+    - heading "Text note" [level=1] [ref=e5]
+    - paragraph [ref=e6]: Capture fast, keep the draft safe, and make every state visible.
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - paragraph [ref=e10]: Text note
+        - paragraph [ref=e11]: Draft only on this device
+      - generic [ref=e12]:
+        - text: Title
+        - textbox "Title" [ref=e13]:
+          - /placeholder: Give this note a short anchor
+      - generic [ref=e14]:
+        - text: Write note
+        - textbox "Write note" [ref=e15]:
+          - /placeholder: Say what happened, what mattered, or what you need to remember.
+      - generic [ref=e16]:
+        - button "Save locally" [ref=e17] [cursor=pointer]
+        - paragraph [ref=e18]: This proof of concept keeps notes on this device first and makes state visible instead of pretending sync already exists.
+    - link "Back to home" [ref=e19] [cursor=pointer]:
+      - /url: /

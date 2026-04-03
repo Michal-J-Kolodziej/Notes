@@ -1,0 +1,29 @@
+- main [ref=e34]:
+  - generic [ref=e35]:
+    - paragraph [ref=e36]: Private notes, less friction
+    - heading "Make space for a thought" [level=1] [ref=e37]
+    - paragraph [ref=e38]: Speak it, type it, save it, and come back to it later without losing the thread.
+    - generic [ref=e39]:
+      - link "Start a voice note" [ref=e40] [cursor=pointer]:
+        - /url: /note/new?mode=voice
+      - link "Start a text note" [ref=e41] [cursor=pointer]:
+        - /url: /note/new?mode=text
+  - generic [ref=e42]:
+    - link "Queue Drafts" [ref=e43] [cursor=pointer]:
+      - /url: /drafts
+      - generic [ref=e44]: Queue
+      - generic [ref=e45]: Drafts
+    - link "Retrieval Recent" [ref=e46] [cursor=pointer]:
+      - /url: /recent
+      - generic [ref=e47]: Retrieval
+      - generic [ref=e48]: Recent
+  - generic [ref=e49]:
+    - link "Capture New note" [ref=e50] [cursor=pointer]:
+      - /url: /note/new?mode=text
+      - generic [ref=e51]: Capture
+      - generic [ref=e52]: New note
+    - link "Controls Settings" [ref=e53] [cursor=pointer]:
+      - /url: /settings
+      - generic [ref=e54]: Controls
+      - generic [ref=e55]: Settings
+    - generic [ref=e56]: Calm by default. Built for a thumb, a voice, and a quick return later.

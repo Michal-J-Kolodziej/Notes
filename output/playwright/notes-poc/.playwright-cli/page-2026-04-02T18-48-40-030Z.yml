@@ -1,0 +1,15 @@
+- main [ref=e21]:
+  - generic [ref=e22]:
+    - paragraph [ref=e23]: Recent
+    - heading "Your latest entries will land here." [level=1] [ref=e24]
+    - paragraph [ref=e25]: The first implementation pass keeps this screen simple, local, and thumb-readable.
+    - generic [ref=e26]:
+      - link "Text note Saved on device Morning reset Wrote the first local-only proof of concept note." [ref=e27] [cursor=pointer]:
+        - /url: /note/9a6b16c6-6cdd-43c5-8fa1-d65f9a0fad89?mode=text
+        - generic [ref=e28]:
+          - paragraph [ref=e29]: Text note
+          - paragraph [ref=e30]: Saved on device
+        - heading "Morning reset" [level=2] [ref=e31]
+        - paragraph [ref=e32]: Wrote the first local-only proof of concept note.
+      - link "Back to home" [ref=e33] [cursor=pointer]:
+        - /url: /

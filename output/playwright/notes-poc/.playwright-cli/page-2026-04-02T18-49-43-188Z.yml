@@ -1,0 +1,27 @@
+- main [ref=e2]:
+  - generic [ref=e3]:
+    - paragraph [ref=e4]: Note workspace
+    - heading "Voice note" [level=1] [ref=e5]
+    - paragraph [ref=e6]: Capture fast, keep the draft safe, and make every state visible.
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - paragraph [ref=e10]: Voice note
+        - paragraph [ref=e11]: Draft only on this device
+      - generic [ref=e12]:
+        - text: Title
+        - textbox "Title" [ref=e13]:
+          - /placeholder: Give this note a short anchor
+      - generic [ref=e14]:
+        - paragraph [ref=e15]: "Keep the first proof of concept simple: record, stop, review the note, then save it locally. Audio playback is not retained yet."
+        - generic [ref=e16]:
+          - button "Start recording" [ref=e17] [cursor=pointer]
+          - button "Use text instead" [ref=e18] [cursor=pointer]
+      - generic [ref=e19]:
+        - text: Review note
+        - textbox "Review note" [ref=e20]:
+          - /placeholder: Your review copy will appear here after recording.
+      - generic [ref=e21]:
+        - button "Save locally" [ref=e22] [cursor=pointer]
+        - paragraph [ref=e23]: This proof of concept keeps notes on this device first and makes state visible instead of pretending sync already exists.
+    - link "Back to home" [ref=e24] [cursor=pointer]:
+      - /url: /
