@@ -1,4 +1,7 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { createEntryRecord } from '~/features/entries/selectors'
+import { createMemoryEntryStore } from '~/features/entries/localStore'
 
 const { publishEntryStoreMutation } = vi.hoisted(() => ({
   publishEntryStoreMutation: vi.fn(),
@@ -7,9 +10,6 @@ const { publishEntryStoreMutation } = vi.hoisted(() => ({
 vi.mock('~/features/entries/storeMutationEvents', () => ({
   publishEntryStoreMutation,
 }))
-
-import { createEntryRecord } from '~/features/entries/selectors'
-import { createMemoryEntryStore } from '~/features/entries/localStore'
 
 describe('local store cross-tab mutation publishing', () => {
   beforeEach(() => {

@@ -26,6 +26,7 @@ describe('CaptureScreen', () => {
         mode="voice"
         onDeleteStoredAudio={vi.fn()}
         onDiscardDraft={onDiscardDraft}
+        recordingDurationLabel="00:00"
         onSave={vi.fn()}
         onStartRecording={vi.fn()}
         onStopRecording={vi.fn()}
@@ -60,6 +61,7 @@ describe('CaptureScreen', () => {
         mode="voice"
         onDeleteStoredAudio={vi.fn()}
         onDiscardDraft={vi.fn()}
+        recordingDurationLabel="00:00"
         onSave={vi.fn()}
         onStartRecording={vi.fn()}
         onStopRecording={vi.fn()}
@@ -98,6 +100,7 @@ describe('CaptureScreen', () => {
         mode="voice"
         onDeleteStoredAudio={onDeleteStoredAudio}
         onDiscardDraft={vi.fn()}
+        recordingDurationLabel="00:00"
         onSave={vi.fn()}
         onStartRecording={vi.fn()}
         onStopRecording={vi.fn()}
@@ -132,6 +135,7 @@ describe('CaptureScreen', () => {
         mode="voice"
         onDeleteStoredAudio={vi.fn()}
         onDiscardDraft={vi.fn()}
+        recordingDurationLabel="00:00"
         onSave={vi.fn()}
         onStartRecording={vi.fn()}
         onStopRecording={vi.fn()}
@@ -166,6 +170,7 @@ describe('CaptureScreen', () => {
         mode="voice"
         onDeleteStoredAudio={vi.fn()}
         onDiscardDraft={vi.fn()}
+        recordingDurationLabel="00:00"
         onSave={vi.fn()}
         onStartRecording={vi.fn()}
         onStopRecording={vi.fn()}
@@ -201,6 +206,7 @@ describe('CaptureScreen', () => {
         mode="voice"
         onDeleteStoredAudio={vi.fn()}
         onDiscardDraft={vi.fn()}
+        recordingDurationLabel="00:00"
         onSave={vi.fn()}
         onStartRecording={vi.fn()}
         onStopRecording={vi.fn()}
@@ -217,5 +223,144 @@ describe('CaptureScreen', () => {
     expect(
       screen.getByRole('button', { name: /removing stored audio/i }),
     ).toBeDisabled()
+  })
+
+  it('shows a live recording timer while voice capture is active', () => {
+    render(
+      <CaptureScreen
+        audioPlaybackUrl={undefined}
+        audioReviewState="transcript_only"
+        canDiscard
+        canDeleteStoredAudio={false}
+        canSwitchToText
+        entry={createEntryRecord({
+          sourceType: 'voice',
+          status: 'recording',
+        })}
+        isDeletingStoredAudio={false}
+        isRecording
+        mode="voice"
+        onDeleteStoredAudio={vi.fn()}
+        onDiscardDraft={vi.fn()}
+        recordingDurationLabel="00:05"
+        onSave={vi.fn()}
+        onStartRecording={vi.fn()}
+        onStopRecording={vi.fn()}
+        onSwitchToText={vi.fn()}
+        onTitleChange={vi.fn()}
+        onTranscriptChange={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText(/recording now 00:05/i)).toBeInTheDocument()
+  })
+
+  it('explains microphone access before the first voice capture prompt', () => {
+    render(
+      <CaptureScreen
+        audioPlaybackUrl={undefined}
+        audioReviewState="transcript_only"
+        canDiscard
+        canDeleteStoredAudio={false}
+        canSwitchToText
+        entry={createEntryRecord({
+          sourceType: 'voice',
+          status: 'draft_local',
+        })}
+        isDeletingStoredAudio={false}
+        isRecording={false}
+        mode="voice"
+        onDeleteStoredAudio={vi.fn()}
+        onDiscardDraft={vi.fn()}
+        recordingDurationLabel="00:00"
+        onSave={vi.fn()}
+        onStartRecording={vi.fn()}
+        onStopRecording={vi.fn()}
+        onSwitchToText={vi.fn()}
+        onTitleChange={vi.fn()}
+        onTranscriptChange={vi.fn()}
+      />,
+    )
+
+    expect(
+      screen.getByText(/before the browser asks for microphone access/i),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/used only while you actively record this note/i),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/not backed up or synced to another device yet/i),
+    ).toBeInTheDocument()
+  })
+
+  it('shows a warning when the same note is open in another tab', () => {
+    render(
+      <CaptureScreen
+        audioPlaybackUrl={undefined}
+        audioReviewState="transcript_only"
+        canDiscard
+        canDeleteStoredAudio={false}
+        canSwitchToText
+        editorPresenceNotice="This note is also open in another tab on this device."
+        entry={createEntryRecord({
+          sourceType: 'text',
+          status: 'draft_local',
+        })}
+        isDeletingStoredAudio={false}
+        isRecording={false}
+        mode="text"
+        onDeleteStoredAudio={vi.fn()}
+        onDiscardDraft={vi.fn()}
+        recordingDurationLabel="00:00"
+        onSave={vi.fn()}
+        onStartRecording={vi.fn()}
+        onStopRecording={vi.fn()}
+        onSwitchToText={vi.fn()}
+        onTitleChange={vi.fn()}
+        onTranscriptChange={vi.fn()}
+      />,
+    )
+
+    expect(
+      screen.getByText(/this note is also open in another tab on this device/i),
+    ).toBeInTheDocument()
+  })
+
+  it('offers a note delete action after a note is saved locally', async () => {
+    const user = userEvent.setup()
+    const onDeleteEntry = vi.fn()
+
+    render(
+      <CaptureScreen
+        audioPlaybackUrl={undefined}
+        audioReviewState="transcript_only"
+        canDeleteEntry
+        canDiscard={false}
+        canDeleteStoredAudio={false}
+        canSwitchToText={false}
+        entry={createEntryRecord({
+          sourceType: 'text',
+          status: 'saved_local',
+        })}
+        isDeletingEntry={false}
+        isDeletingStoredAudio={false}
+        isRecording={false}
+        mode="text"
+        onDeleteEntry={onDeleteEntry}
+        onDeleteStoredAudio={vi.fn()}
+        onDiscardDraft={vi.fn()}
+        recordingDurationLabel="00:00"
+        onSave={vi.fn()}
+        onStartRecording={vi.fn()}
+        onStopRecording={vi.fn()}
+        onSwitchToText={vi.fn()}
+        onTitleChange={vi.fn()}
+        onTranscriptChange={vi.fn()}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: /delete note/i }))
+
+    expect(onDeleteEntry).toHaveBeenCalledTimes(1)
   })
 })

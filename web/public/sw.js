@@ -1,6 +1,6 @@
-const APP_SHELL_CACHE = 'notes-app-shell-v1'
+const APP_SHELL_CACHE = 'notes-app-shell-v3'
 const APP_SHELL_URL = '/'
-const STATIC_CACHE = 'notes-static-v1'
+const STATIC_CACHE = 'notes-static-v3'
 const STATIC_ASSETS = [
   '/',
   '/site.webmanifest',
@@ -65,7 +65,9 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
+  const isStaticAssetPath = requestUrl.pathname.startsWith('/assets/')
   const isStaticAsset =
+    isStaticAssetPath ||
     request.destination === 'script' ||
     request.destination === 'style' ||
     request.destination === 'image' ||
@@ -76,16 +78,24 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  event.respondWith(
-    caches.match(request).then(async (cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse
-      }
+  event.respondWith((async () => {
+    const staticCache = await caches.open(STATIC_CACHE)
+    const cachedResponse =
+      (await staticCache.match(request.url, { ignoreVary: true })) ||
+      (await staticCache.match(requestUrl.pathname, { ignoreVary: true })) ||
+      (await caches.match(request, { ignoreVary: true }))
 
-      const networkResponse = await fetch(request)
+    if (cachedResponse) {
+      return cachedResponse
+    }
+
+    const networkResponse = await fetch(request)
+
+    if (networkResponse.ok) {
       const responseClone = networkResponse.clone()
-      void caches.open(STATIC_CACHE).then((cache) => cache.put(request, responseClone))
-      return networkResponse
-    }),
-  )
+      void staticCache.put(request, responseClone)
+    }
+
+    return networkResponse
+  })())
 })

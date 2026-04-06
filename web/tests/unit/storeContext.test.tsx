@@ -2,6 +2,8 @@ import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { EntryStoreProvider } from '~/features/entries/storeContext'
+
 const { createLocalEntryStore } = vi.hoisted(() => ({
   createLocalEntryStore: vi.fn(),
 }))
@@ -10,8 +12,6 @@ vi.mock('~/features/entries/localStore', () => ({
   createLocalEntryStore,
 }))
 
-import { EntryStoreProvider } from '~/features/entries/storeContext'
-
 describe('EntryStoreProvider', () => {
   beforeEach(() => {
     createLocalEntryStore.mockReset()
@@ -19,18 +19,18 @@ describe('EntryStoreProvider', () => {
 
   it('renders children when durable storage opens successfully', async () => {
     createLocalEntryStore.mockResolvedValueOnce({
-      clear: vi.fn(async () => {}),
-      deleteEntry: vi.fn(async () => {}),
-      getEntry: vi.fn(async () => undefined),
-      getEntryAudio: vi.fn(async () => undefined),
-      getAudioFile: vi.fn(async () => undefined),
-      listEntries: vi.fn(async () => []),
+      clear: vi.fn(() => Promise.resolve()),
+      deleteEntry: vi.fn(() => Promise.resolve()),
+      getEntry: vi.fn(() => Promise.resolve(undefined)),
+      getEntryAudio: vi.fn(() => Promise.resolve(undefined)),
+      getAudioFile: vi.fn(() => Promise.resolve(undefined)),
+      listEntries: vi.fn(() => Promise.resolve([])),
       persistenceMode: 'indexeddb',
-      replaceAll: vi.fn(async () => {}),
-      saveAudioFile: vi.fn(async (_, blob) => blob),
-      saveEntry: vi.fn(async (entry) => entry),
-      saveEntryWithAudio: vi.fn(async (entry) => entry),
-      deleteAudioFile: vi.fn(async () => {}),
+      replaceAll: vi.fn(() => Promise.resolve()),
+      saveAudioFile: vi.fn((_, blob) => Promise.resolve(blob)),
+      saveEntry: vi.fn((entry) => Promise.resolve(entry)),
+      saveEntryWithAudio: vi.fn((entry) => Promise.resolve(entry)),
+      deleteAudioFile: vi.fn(() => Promise.resolve()),
     })
 
     render(

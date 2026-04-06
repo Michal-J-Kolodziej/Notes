@@ -36,21 +36,21 @@ export interface EntryStoreAudioFile {
 }
 
 export interface EntryStoreSnapshot {
-  audioFiles: EntryStoreAudioFile[]
-  entries: EntryRecord[]
+  audioFiles: Array<EntryStoreAudioFile>
+  entries: Array<EntryRecord>
 }
 
 export interface EntryStore {
   persistenceMode: 'indexeddb' | 'memory'
-  saveEntry(entry: EntryRecord): Promise<EntryRecord>
-  saveEntryWithAudio(entry: EntryRecord, audio: Blob): Promise<EntryRecord>
-  getEntry(id: string): Promise<EntryRecord | undefined>
-  listEntries(): Promise<EntryRecord[]>
-  deleteEntry(id: string): Promise<void>
-  getEntryAudio(audioFileId: string): Promise<Blob | undefined>
-  saveAudioFile(id: string, blob: Blob): Promise<Blob>
-  getAudioFile(id: string): Promise<Blob | undefined>
-  deleteAudioFile(id: string): Promise<void>
-  replaceAll(snapshot: EntryStoreSnapshot): Promise<void>
-  clear(): Promise<void>
+  saveEntry: (entry: EntryRecord) => Promise<EntryRecord>
+  saveEntryWithAudio: (entry: EntryRecord, audio: Blob) => Promise<EntryRecord>
+  getEntry: (id: string) => Promise<EntryRecord | undefined>
+  listEntries: () => Promise<Array<EntryRecord>>
+  deleteEntry: (id: string) => Promise<void>
+  getEntryAudio: (audioFileId: string) => Promise<Blob | undefined>
+  saveAudioFile: (id: string, blob: Blob) => Promise<Blob>
+  getAudioFile: (id: string) => Promise<Blob | undefined>
+  deleteAudioFile: (id: string) => Promise<void>
+  replaceAll: (snapshot: EntryStoreSnapshot) => Promise<void>
+  clear: () => Promise<void>
 }

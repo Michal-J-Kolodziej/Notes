@@ -6,13 +6,13 @@ export interface EntryDraftMutation {
 }
 
 export interface EntryDraftPersistOptions {
-  persistEntry?(entry: EntryRecord): Promise<EntryRecord>
+  persistEntry?: (entry: EntryRecord) => Promise<EntryRecord>
 }
 
 export interface CreateEntryDraftControllerOptions {
   initialEntry: EntryRecord
-  deleteEntry(id: string): Promise<void>
-  saveEntry(entry: EntryRecord): Promise<EntryRecord>
+  deleteEntry: (id: string) => Promise<void>
+  saveEntry: (entry: EntryRecord) => Promise<EntryRecord>
 }
 
 function cloneEntry(entry: EntryRecord) {

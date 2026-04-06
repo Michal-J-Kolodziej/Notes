@@ -79,7 +79,7 @@ test('settings can restore a downloaded recovery file back into local storage', 
     },
   })
 
-  await page.locator('input[type="file"]').setInputFiles(downloadPath!)
+  await page.locator('input[type="file"]').setInputFiles(downloadPath)
   await expect(
     page.getByRole('dialog', { name: /replace local notes with this recovery file/i }),
   ).toBeVisible()

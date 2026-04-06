@@ -9,9 +9,9 @@ export interface ExportedRetainedAudio {
 }
 
 export interface LocalEntriesExport {
-  entries: EntryRecord[]
+  entries: Array<EntryRecord>
   exportedAt: string
-  retainedAudio: ExportedRetainedAudio[]
+  retainedAudio: Array<ExportedRetainedAudio>
   schemaVersion: 1
 }
 
@@ -29,7 +29,7 @@ function cloneEntry(entry: EntryRecord) {
   return structuredClone(entry)
 }
 
-function bytesToBase64(bytes: Uint8Array) {
+export function bytesToBase64(bytes: Uint8Array) {
   const alphabet =
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
 

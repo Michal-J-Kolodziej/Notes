@@ -1,6 +1,6 @@
 import type {
-  EntryRecord,
   EntryOwnerMode,
+  EntryRecord,
   EntrySourceType,
   EntryStatus,
   EntryStorageMode,
@@ -35,9 +35,9 @@ const BASE64_ALPHABET =
 type RestoreStore = Pick<EntryStore, 'getEntryAudio' | 'listEntries' | 'replaceAll'>
 
 interface ParsedRecoveryPayload {
-  entries: unknown[]
+  entries: Array<unknown>
   exportedAt: string
-  retainedAudio: unknown[]
+  retainedAudio: Array<unknown>
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -71,12 +71,16 @@ function isEntryStorageMode(value: unknown): value is EntryStorageMode {
   )
 }
 
+function cloneEntry(entry: EntryRecord) {
+  return structuredClone(entry)
+}
+
 function toValidatedEntry(entry: unknown): EntryRecord {
   if (!isRecord(entry)) {
     throw new Error('Recovery file contains an invalid note record.')
   }
 
-  const candidate = entry as Record<string, unknown>
+  const candidate = entry
 
   if (
     !isString(candidate.id) ||
@@ -133,7 +137,7 @@ function base64ToBytes(value: string) {
     throw new Error('Recovery file contains invalid retained audio encoding.')
   }
 
-  const bytes: number[] = []
+  const bytes: Array<number> = []
 
   for (let index = 0; index < normalized.length; index += 4) {
     const chunk = normalized.slice(index, index + 4)
@@ -145,7 +149,7 @@ function base64ToBytes(value: string) {
       return BASE64_ALPHABET.indexOf(character)
     })
 
-    if (sextets.some((value) => value < -1)) {
+    if (sextets.some((sextet) => sextet < -1)) {
       throw new Error('Recovery file contains invalid retained audio encoding.')
     }
 
@@ -286,15 +290,49 @@ function buildSnapshot(payload: ParsedRecoveryPayload): EntryStoreSnapshot {
   }
 }
 
-export async function restoreLocalEntriesFromJson(
+async function captureCurrentSnapshot(
   store: RestoreStore,
-  json: string,
+): Promise<EntryStoreSnapshot> {
+  const entries = (await store.listEntries()).map(cloneEntry)
+  const retainedAudioIds = [
+    ...new Set(
+      entries
+        .filter(
+          (entry) =>
+            entry.hasAudio &&
+            entry.storageMode === 'transcript_plus_audio' &&
+            entry.audioFileId,
+        )
+        .map((entry) => entry.audioFileId!),
+    ),
+  ]
+  const audioFiles = (
+    await Promise.all(
+      retainedAudioIds.map(async (audioFileId) => {
+        const blob = await store.getEntryAudio(audioFileId)
+
+        return blob
+          ? {
+              blob,
+              id: audioFileId,
+            }
+          : null
+      }),
+    )
+  ).filter((audioFile): audioFile is EntryStoreSnapshot['audioFiles'][number] =>
+    Boolean(audioFile),
+  )
+
+  return {
+    audioFiles,
+    entries,
+  }
+}
+
+async function verifyRestoredSnapshot(
+  store: RestoreStore,
+  snapshot: EntryStoreSnapshot,
 ) {
-  const payload = parseRecoveryPayload(json)
-  const snapshot = buildSnapshot(payload)
-
-  await store.replaceAll(snapshot)
-
   const restoredEntries = await store.listEntries()
 
   if (restoredEntries.length !== snapshot.entries.length) {
@@ -310,6 +348,28 @@ export async function restoreLocalEntriesFromJson(
       }
     }),
   )
+}
+
+export async function restoreLocalEntriesFromJson(
+  store: RestoreStore,
+  json: string,
+) {
+  const payload = parseRecoveryPayload(json)
+  const snapshot = buildSnapshot(payload)
+  const previousSnapshot = await captureCurrentSnapshot(store)
+
+  try {
+    await store.replaceAll(snapshot)
+    await verifyRestoredSnapshot(store, snapshot)
+  } catch (error) {
+    try {
+      await store.replaceAll(previousSnapshot)
+    } catch {
+      throw error
+    }
+
+    throw error
+  }
 
   return {
     entryCount: snapshot.entries.length,

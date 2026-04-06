@@ -98,4 +98,78 @@ describe('restoreLocalEntriesFromJson', () => {
 
     expect(await targetStore.getEntry(existingEntry.id)).toEqual(existingEntry)
   })
+
+  it('restores the previous local snapshot when post-restore verification fails', async () => {
+    const sourceStore = createMemoryEntryStore()
+    const restoredVoiceEntry = createEntryRecord({
+      id: 'restore-voice',
+      audioFileId: 'restore-audio',
+      hasAudio: true,
+      sourceType: 'voice',
+      status: 'saved_local',
+      storageMode: 'transcript_plus_audio',
+      title: 'Voice restore',
+      transcript: 'Recovered from export',
+    })
+
+    await sourceStore.saveEntryWithAudio(
+      restoredVoiceEntry,
+      new Blob(['voice-restore-audio'], { type: 'audio/webm' }),
+    )
+
+    const payload = await createLocalEntriesExport(sourceStore)
+    const targetStore = createMemoryEntryStore()
+    const existingEntry = createEntryRecord({
+      id: 'existing-note',
+      audioFileId: 'existing-audio',
+      hasAudio: true,
+      sourceType: 'voice',
+      status: 'saved_local',
+      storageMode: 'transcript_plus_audio',
+      title: 'Keep me safe',
+      transcript: 'Existing transcript',
+    })
+
+    await targetStore.saveEntryWithAudio(
+      existingEntry,
+      new Blob(['existing-audio'], { type: 'audio/webm' }),
+    )
+
+    let breakRestoredAudioVerification = false
+    const wrappedStore = {
+      getEntryAudio(audioFileId: string) {
+        if (breakRestoredAudioVerification && audioFileId === 'restore-audio') {
+          return Promise.resolve(undefined)
+        }
+
+        return targetStore.getEntryAudio(audioFileId)
+      },
+      listEntries() {
+        return targetStore.listEntries()
+      },
+      async replaceAll(snapshot: Parameters<typeof targetStore.replaceAll>[0]) {
+        await targetStore.replaceAll(snapshot)
+        breakRestoredAudioVerification = snapshot.entries.some(
+          (entry) => entry.id === 'restore-voice',
+        )
+      },
+    }
+
+    await expect(
+      restoreLocalEntriesFromJson(
+        wrappedStore,
+        JSON.stringify(payload),
+      ),
+    ).rejects.toThrow(/could not be verified/i)
+
+    expect(await targetStore.listEntries()).toEqual([
+      expect.objectContaining({
+        id: 'existing-note',
+        title: 'Keep me safe',
+      }),
+    ])
+    await expect((await targetStore.getEntryAudio('existing-audio'))?.text()).resolves.toBe(
+      'existing-audio',
+    )
+  })
 })

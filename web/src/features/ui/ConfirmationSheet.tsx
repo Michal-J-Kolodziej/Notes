@@ -4,6 +4,7 @@ interface ConfirmationSheetProps {
   cancelLabel: string
   confirmLabel: string
   confirmTone?: 'default' | 'destructive'
+  details?: Array<string>
   description: string
   isConfirming?: boolean
   onCancel: () => void
@@ -16,6 +17,7 @@ export function ConfirmationSheet({
   cancelLabel,
   confirmLabel,
   confirmTone = 'destructive',
+  details,
   description,
   isConfirming = false,
   onCancel,
@@ -146,6 +148,18 @@ export function ConfirmationSheet({
         >
           {description}
         </p>
+        {details && details.length > 0 ? (
+          <ul className="mt-4 grid gap-3 text-sm leading-6 text-[var(--ink)]">
+            {details.map((detail) => (
+              <li
+                className="rounded-[1rem] border border-[rgba(58,34,29,0.08)] bg-white/72 px-4 py-3"
+                key={detail}
+              >
+                {detail}
+              </li>
+            ))}
+          </ul>
+        ) : null}
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
           <button
             className="inline-flex min-h-12 items-center justify-center rounded-[1rem] border border-[rgba(58,34,29,0.12)] bg-white px-4 py-3 text-sm font-semibold text-[var(--ink)] disabled:cursor-not-allowed disabled:opacity-60"

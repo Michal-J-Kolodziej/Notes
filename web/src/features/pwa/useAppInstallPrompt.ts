@@ -6,7 +6,7 @@ interface BeforeInstallPromptChoice {
 }
 
 interface BeforeInstallPromptEvent extends Event {
-  platforms?: string[]
+  platforms?: Array<string>
   prompt: () => Promise<void>
   userChoice: Promise<BeforeInstallPromptChoice>
 }
@@ -23,7 +23,8 @@ function isStandaloneMode() {
   }
 
   return (
-    window.matchMedia?.('(display-mode: standalone)').matches === true ||
+    (typeof window.matchMedia === 'function' &&
+      window.matchMedia('(display-mode: standalone)').matches === true) ||
     ((navigator as Navigator & { standalone?: boolean }).standalone ?? false) === true
   )
 }

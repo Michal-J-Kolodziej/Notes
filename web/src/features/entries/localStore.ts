@@ -1,18 +1,19 @@
+import { sortEntriesByUpdatedAtDesc } from './selectors'
+import { publishEntryStoreMutation } from './storeMutationEvents'
 import type {
   EntryRecord,
   EntryStore,
   EntryStoreSnapshot,
 } from './types'
-import { sortEntriesByUpdatedAtDesc } from './selectors'
+import type {StoredAudioFileRecord} from '~/lib/platform/indexedDb';
 import {
   ENTRY_AUDIO_STORE_NAME,
   ENTRY_DATABASE_NAME,
   ENTRY_STORE_NAME,
+  
   hasIndexedDbSupport,
-  openEntryDatabase,
-  type StoredAudioFileRecord,
+  openEntryDatabase
 } from '~/lib/platform/indexedDb'
-import { publishEntryStoreMutation } from './storeMutationEvents'
 
 function cloneEntry(entry: EntryRecord): EntryRecord {
   return structuredClone(entry)
@@ -90,10 +91,10 @@ export function createMemoryEntryStore(): EntryStore {
   const entries = new Map<string, EntryRecord>()
   const audioFiles = new Map<string, Blob>()
 
-  async function persistEntry(
+  function persistEntry(
     entry: EntryRecord,
     audio?: Blob,
-  ): Promise<EntryRecord> {
+  ) {
     const copy = cloneEntry(entry)
     const previous = entries.get(copy.id)
     const previousAudioFileId = getStoredAudioFileId(previous)
@@ -112,10 +113,10 @@ export function createMemoryEntryStore(): EntryStore {
       audioFiles.delete(previousAudioFileId)
     }
 
-    return cloneEntry(nextEntry)
+    return Promise.resolve(cloneEntry(nextEntry))
   }
 
-  async function clearAudioForEntry(id: string) {
+  function clearAudioForEntry(id: string) {
     const previous = entries.get(id)
     const previousAudioFileId = getStoredAudioFileId(previous)
 
@@ -126,7 +127,7 @@ export function createMemoryEntryStore(): EntryStore {
     }
   }
 
-  async function replaceAll({ audioFiles: nextAudioFiles, entries: nextEntries }: EntryStoreSnapshot) {
+  function replaceAll({ audioFiles: nextAudioFiles, entries: nextEntries }: EntryStoreSnapshot) {
     const entryCopies = nextEntries.map((entry) => cloneEntry(entry))
     const audioCopies = nextAudioFiles.map((audioFile) => ({
       blob: cloneAudioFile(audioFile.blob),
@@ -148,18 +149,20 @@ export function createMemoryEntryStore(): EntryStore {
   return {
     persistenceMode: 'memory',
     saveEntry(entry) {
-      return persistEntry(entry)
+      return Promise.resolve(persistEntry(entry))
     },
     saveEntryWithAudio(entry, audio) {
-      return persistEntry(entry, audio)
+      return Promise.resolve(persistEntry(entry, audio))
     },
-    async getEntry(id) {
+    getEntry(id) {
       const entry = entries.get(id)
-      return entry ? cloneEntry(entry) : undefined
+      return Promise.resolve(entry ? cloneEntry(entry) : undefined)
     },
-    async listEntries() {
-      return sortEntriesByUpdatedAtDesc(
-        Array.from(entries.values(), (entry) => cloneEntry(entry)),
+    listEntries() {
+      return Promise.resolve(
+        sortEntriesByUpdatedAtDesc(
+          Array.from(entries.values(), (entry) => cloneEntry(entry)),
+        ),
       )
     },
     async deleteEntry(id) {
@@ -173,29 +176,31 @@ export function createMemoryEntryStore(): EntryStore {
         })
       }
     },
-    async getEntryAudio(audioFileId) {
+    getEntryAudio(audioFileId) {
       const blob = audioFiles.get(audioFileId)
-      return blob ? cloneAudioFile(blob) : undefined
+      return Promise.resolve(blob ? cloneAudioFile(blob) : undefined)
     },
-    async saveAudioFile(id, blob) {
+    saveAudioFile(id, blob) {
       const copy = cloneAudioFile(blob)
       audioFiles.set(id, copy)
-      return cloneAudioFile(copy)
+      return Promise.resolve(cloneAudioFile(copy))
     },
-    async getAudioFile(id) {
+    getAudioFile(id) {
       const blob = audioFiles.get(id)
-      return blob ? cloneAudioFile(blob) : undefined
+      return Promise.resolve(blob ? cloneAudioFile(blob) : undefined)
     },
-    async deleteAudioFile(id) {
+    deleteAudioFile(id) {
       audioFiles.delete(id)
+      return Promise.resolve()
     },
-    async replaceAll(snapshot) {
-      await replaceAll(snapshot)
+    replaceAll(snapshot) {
+      replaceAll(snapshot)
       publishEntryStoreMutation({
         kind: 'store_replaced',
       })
+      return Promise.resolve()
     },
-    async clear() {
+    clear() {
       const hadLocalData = entries.size > 0 || audioFiles.size > 0
       entries.clear()
       audioFiles.clear()
@@ -205,6 +210,8 @@ export function createMemoryEntryStore(): EntryStore {
           kind: 'store_cleared',
         })
       }
+
+      return Promise.resolve()
     },
   }
 }

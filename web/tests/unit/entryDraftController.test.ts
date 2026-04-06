@@ -138,13 +138,14 @@ describe('entry draft controller', () => {
   })
 
   it('serializes a custom persisted operation so discard cannot overtake audio attachment writes', async () => {
-    const operationOrder: string[] = []
+    const operationOrder: Array<string> = []
     let releaseAudioSave: (() => void) | undefined
     const audioSaveGate = new Promise<void>((resolve) => {
       releaseAudioSave = resolve
     })
-    const deleteEntry = vi.fn(async () => {
+    const deleteEntry = vi.fn(() => {
       operationOrder.push('delete')
+      return Promise.resolve()
     })
 
     const controller = createEntryDraftController({
@@ -152,7 +153,7 @@ describe('entry draft controller', () => {
         id: 'draft-audio-race',
       }),
       deleteEntry,
-      saveEntry: vi.fn(async (entry) => structuredClone(entry)),
+      saveEntry: vi.fn((entry) => Promise.resolve(structuredClone(entry))),
     })
 
     const audioMutation = controller.update(
@@ -188,7 +189,7 @@ describe('entry draft controller', () => {
   })
 
   it('flush waits for queued writes before later persistence work starts', async () => {
-    const operationOrder: string[] = []
+    const operationOrder: Array<string> = []
     let releaseSave: (() => void) | undefined
     const saveGate = new Promise<void>((resolve) => {
       releaseSave = resolve

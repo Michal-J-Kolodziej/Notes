@@ -1,11 +1,13 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
+import type {EntryRecord} from '~/features/entries';
 import {
   EntryListCard,
+  
+  isDraftEntry,
   useEntryStore,
   useForeignEntryStoreMutationVersion,
-  useRelativeTimeNow,
-  type EntryRecord,
+  useRelativeTimeNow
 } from '~/features/entries'
 
 export const Route = createFileRoute('/drafts')({
@@ -16,7 +18,7 @@ function DraftsRoute() {
   const store = useEntryStore()
   const foreignMutationVersion = useForeignEntryStoreMutationVersion()
   const now = useRelativeTimeNow()
-  const [entries, setEntries] = useState<EntryRecord[]>([])
+  const [entries, setEntries] = useState<Array<EntryRecord>>([])
 
   useEffect(() => {
     let active = true
@@ -26,13 +28,7 @@ function DraftsRoute() {
         return
       }
 
-      setEntries(
-        items.filter((item) =>
-          ['draft_local', 'recording', 'processing', 'review_ready', 'needs_retry'].includes(
-            item.status,
-          ),
-        ),
-      )
+      setEntries(items.filter(isDraftEntry))
     })
 
     return () => {
@@ -72,6 +68,12 @@ function DraftsRoute() {
               </Link>
             ))
           )}
+          <Link
+            className="inline-flex rounded-full border border-[rgba(58,34,29,0.12)] bg-white/80 px-4 py-3 text-sm font-semibold text-[var(--ink)]"
+            to="/search"
+          >
+            Search local notes
+          </Link>
           <Link
             className="mt-2 inline-flex rounded-full bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white"
             to="/"

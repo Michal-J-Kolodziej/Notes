@@ -1,4 +1,26 @@
 import { expect, test } from '@playwright/test'
+import type { Page } from '@playwright/test'
+
+test.use({ serviceWorkers: 'allow' })
+
+async function waitForOfflineShellReadiness(page: Page) {
+  await expect
+    .poll(async () => {
+      return await page.evaluate(async () => {
+        const registrations = await navigator.serviceWorker.getRegistrations()
+        const staticCache = await caches.open('notes-static-v3')
+        const cachedRequests = await staticCache.keys()
+
+        return (
+          registrations.length > 0 &&
+          cachedRequests.some((request) =>
+            /^\/assets\/main-[^/]+\.js$/.test(new URL(request.url).pathname),
+          )
+        )
+      })
+    })
+    .toBe(true)
+}
 
 test('manifest exposes install metadata and the app registers a service worker', async ({
   page,
@@ -80,9 +102,12 @@ test('offline reload keeps the app shell available and tells the user local note
   await expect(
     page.getByRole('heading', { name: /make space for a thought/i }),
   ).toBeVisible()
+  await waitForOfflineShellReadiness(page)
 
   await context.setOffline(true)
-  await page.reload({ waitUntil: 'domcontentloaded' })
+  await page
+    .reload({ waitUntil: 'domcontentloaded' })
+    .catch(() => undefined)
 
   await expect(
     page.getByRole('heading', { name: /make space for a thought/i }),

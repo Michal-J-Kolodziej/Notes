@@ -69,7 +69,11 @@ test('settings can export local notes and delete all retained local data', async
   const downloadPath = await download.path()
   expect(downloadPath).not.toBeNull()
 
-  const exportPayload = JSON.parse(await readFile(downloadPath!, 'utf8'))
+  if (!downloadPath) {
+    throw new Error('Expected Playwright to persist the exported recovery file.')
+  }
+
+  const exportPayload = JSON.parse(await readFile(downloadPath, 'utf8'))
 
   expect(exportPayload.entries).toEqual(
     expect.arrayContaining([

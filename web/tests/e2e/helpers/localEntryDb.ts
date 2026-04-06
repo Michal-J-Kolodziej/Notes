@@ -1,11 +1,12 @@
-import { expect, test as base, type Page } from '@playwright/test'
-import type { EntryRecord } from '../../../src/features/entries'
+import {  test as base, expect } from '@playwright/test'
 import {
   ENTRY_AUDIO_STORE_NAME,
   ENTRY_DATABASE_NAME,
   ENTRY_DATABASE_VERSION,
   ENTRY_STORE_NAME,
 } from '../../../src/lib/platform/indexedDb'
+import type {Page} from '@playwright/test';
+import type { EntryRecord } from '../../../src/features/entries'
 
 export type LocalEntrySeed = {
   entry: EntryRecord
@@ -15,9 +16,9 @@ export type LocalEntrySeed = {
 }
 
 export interface LocalEntryDbHarness {
-  getEntry(entryId: string): Promise<EntryRecord | undefined>
-  seed(...seeds: LocalEntrySeed[]): Promise<void>
-  hasRetainedAudio(audioFileId: string): Promise<boolean>
+  getEntry: (entryId: string) => Promise<EntryRecord | undefined>
+  seed: (...seeds: Array<LocalEntrySeed>) => Promise<void>
+  hasRetainedAudio: (audioFileId: string) => Promise<boolean>
 }
 
 interface RegisterLocalEntryDbHelpersArgs {

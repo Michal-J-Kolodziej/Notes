@@ -1,25 +1,51 @@
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type {EntryDraftPersistOptions, EntryRecord} from '~/features/entries';
+import type {VoiceCaptureFallback} from '~/lib/audio/recordingSupport';
 import { CaptureScreen } from '~/features/capture/CaptureScreen'
 import {
+  
+  
   createEntryDraftController,
   createEntryRecord,
+  observeNoteEditorPresence,
   removeStoredAudioFromCurrentEntry,
   useEntryStore,
-  useForeignEntryStoreMutationVersion,
-  type EntryDraftPersistOptions,
-  type EntryRecord,
+  useForeignEntryStoreMutationVersion
 } from '~/features/entries'
+import {
+  
+  classifyVoiceCaptureError,
+  createPreferredAudioRecorder
+} from '~/lib/audio/recordingSupport'
+import {
+  hasAcknowledgedVoiceCaptureDisclosure,
+  markVoiceCaptureDisclosureAcknowledged,
+} from '~/lib/audio/voiceCaptureDisclosure'
+import { getNewEntryOwnershipForSession, useAppSession } from '~/lib/auth'
 import { ConfirmationSheet } from '~/features/ui/ConfirmationSheet'
 
 type NoteSearch = {
-  fallback?: 'mic-denied'
+  fallback?: VoiceCaptureFallback
   mode?: 'text' | 'voice'
+}
+
+function formatRecordingDuration(elapsedMs: number) {
+  const totalSeconds = Math.max(0, Math.floor(elapsedMs / 1000))
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+
+  return `${minutes.toString().padStart(2, '0')}:${seconds
+    .toString()
+    .padStart(2, '0')}`
 }
 
 export const Route = createFileRoute('/note/$noteId')({
   validateSearch: (search: Record<string, unknown>): NoteSearch => ({
-    fallback: search.fallback === 'mic-denied' ? 'mic-denied' : undefined,
+    fallback:
+      search.fallback === 'mic-denied' || search.fallback === 'voice-unsupported'
+        ? search.fallback
+        : undefined,
     mode: search.mode === 'voice' ? 'voice' : 'text',
   }),
   component: NoteRoute,
@@ -29,6 +55,7 @@ function NoteRoute() {
   const store = useEntryStore()
   const foreignMutationVersion = useForeignEntryStoreMutationVersion()
   const navigate = useNavigate({ from: Route.fullPath })
+  const session = useAppSession()
   const { noteId } = Route.useParams()
   const { fallback, mode = 'text' } = Route.useSearch()
   const [entry, setEntry] = useState<EntryRecord | null>(null)
@@ -38,17 +65,27 @@ function NoteRoute() {
   const [audioReviewState, setAudioReviewState] = useState<
     'loading' | 'ready' | 'transcript_only' | 'unavailable'
   >('transcript_only')
+  const [isDeletingEntry, setIsDeletingEntry] = useState(false)
   const [isDeletingStoredAudio, setIsDeletingStoredAudio] = useState(false)
   const [pendingConfirmation, setPendingConfirmation] = useState<
-    'delete_stored_audio' | 'replace_recording' | null
+    | 'delete_entry'
+    | 'delete_stored_audio'
+    | 'replace_recording'
+    | 'voice_capture_disclosure'
+    | null
   >(null)
   const [persistError, setPersistError] = useState<string | null>(null)
   const [isRecording, setIsRecording] = useState(false)
+  const [isOpenInAnotherTab, setIsOpenInAnotherTab] = useState(false)
+  const [recordingStartedAt, setRecordingStartedAt] = useState<number | null>(
+    null,
+  )
+  const [recordingElapsedMs, setRecordingElapsedMs] = useState(0)
   const draftControllerRef = useRef<ReturnType<typeof createEntryDraftController> | null>(
     null,
   )
   const discardDraftOnStopRef = useRef(false)
-  const recordedChunksRef = useRef<Blob[]>([])
+  const recordedChunksRef = useRef<Array<Blob>>([])
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
@@ -67,9 +104,15 @@ function NoteRoute() {
     [store],
   )
 
+  const resetRecordingTimer = useCallback(() => {
+    setRecordingStartedAt(null)
+    setRecordingElapsedMs(0)
+  }, [])
+
   const stopRecordingWithoutSaving = useCallback(() => {
     discardDraftOnStopRef.current = true
     setIsRecording(false)
+    resetRecordingTimer()
     recordedChunksRef.current = []
 
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
@@ -79,7 +122,7 @@ function NoteRoute() {
       streamRef.current?.getTracks().forEach((track) => track.stop())
       streamRef.current = null
     }
-  }, [])
+  }, [resetRecordingTimer])
 
   const showMissingEntryState = useCallback((message: string) => {
     stopRecordingWithoutSaving()
@@ -129,6 +172,7 @@ function NoteRoute() {
     async function bootstrap() {
       if (noteId === 'new') {
         const created = createEntryRecord({
+          ...getNewEntryOwnershipForSession(session),
           sourceType: mode,
           status: 'draft_local',
         })
@@ -166,7 +210,7 @@ function NoteRoute() {
     return () => {
       mounted = false
     }
-  }, [initializeDraft, mode, navigate, noteId, showMissingEntryState, store])
+  }, [initializeDraft, mode, navigate, noteId, session, showMissingEntryState, store])
 
   useEffect(() => {
     let active = true
@@ -205,10 +249,40 @@ function NoteRoute() {
   useEffect(() => {
     return () => {
       recordedChunksRef.current = []
-      mediaRecorderRef.current?.stream?.getTracks().forEach((track) => track.stop())
+      mediaRecorderRef.current?.stream.getTracks().forEach((track) => track.stop())
       streamRef.current?.getTracks().forEach((track) => track.stop())
     }
   }, [])
+
+  useEffect(() => {
+    if (!isRecording || recordingStartedAt === null) {
+      return
+    }
+
+    const updateElapsedTime = () => {
+      setRecordingElapsedMs(Math.max(0, Date.now() - recordingStartedAt))
+    }
+
+    updateElapsedTime()
+
+    const intervalId = window.setInterval(updateElapsedTime, 1000)
+
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [isRecording, recordingStartedAt])
+
+  useEffect(() => {
+    if (!entry?.id || missingEntryMessage) {
+      setIsOpenInAnotherTab(false)
+      return
+    }
+
+    return observeNoteEditorPresence({
+      noteId: entry.id,
+      onPresenceChange: setIsOpenInAnotherTab,
+    })
+  }, [entry?.id, missingEntryMessage])
 
   useEffect(() => {
     let revokedUrl: string | null = null
@@ -282,10 +356,14 @@ function NoteRoute() {
       return 'Microphone access was denied, so the app moved you into manual text capture instead.'
     }
 
+     if (fallback === 'voice-unsupported') {
+      return 'This browser could not start voice capture here, so the app moved you into manual text capture instead.'
+    }
+
     return undefined
   }, [fallback, persistError])
 
-  const handleSwitchToText = useCallback(async () => {
+  const handleSwitchToText = useCallback(async (fallbackReason?: VoiceCaptureFallback) => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       discardDraftOnStopRef.current = true
       setIsRecording(false)
@@ -312,7 +390,7 @@ function NoteRoute() {
     void navigate({
       params: { noteId: mutation.nextEntry.id },
       replace: true,
-      search: { fallback: 'mic-denied', mode: 'text' },
+      search: { fallback: fallbackReason, mode: 'text' },
       to: '/note/$noteId',
     })
   }, [commitEntry, navigate])
@@ -374,6 +452,36 @@ function NoteRoute() {
     }
   }, [initializeDraft, isDeletingStoredAudio, store])
 
+  const handleDeleteEntry = useCallback(async () => {
+    const currentEntry = draftControllerRef.current?.getCurrent()
+
+    if (
+      !currentEntry ||
+      currentEntry.status !== 'saved_local' ||
+      isDeletingEntry
+    ) {
+      return
+    }
+
+    setIsDeletingEntry(true)
+    setPersistError(null)
+
+    try {
+      await store.deleteEntry(currentEntry.id)
+      void navigate({
+        to: '/recent',
+      })
+    } catch (error) {
+      setPersistError(
+        error instanceof Error
+          ? `This note could not be deleted from this device. ${error.message}`
+          : 'This note could not be deleted from this device.',
+      )
+    } finally {
+      setIsDeletingEntry(false)
+    }
+  }, [isDeletingEntry, navigate, store])
+
   const handleDiscardDraft = useCallback(async () => {
     const controller = draftControllerRef.current
     const currentEntry = controller?.getCurrent()
@@ -407,8 +515,7 @@ function NoteRoute() {
         : null
 
     if (
-      typeof navigator === 'undefined' ||
-      !navigator.mediaDevices?.getUserMedia ||
+      typeof navigator.mediaDevices.getUserMedia !== 'function' ||
       typeof MediaRecorder === 'undefined'
     ) {
       if (replacementRecoveryEntry) {
@@ -418,20 +525,29 @@ function NoteRoute() {
         return
       }
 
-      await handleSwitchToText()
+      await handleSwitchToText('voice-unsupported')
       return
     }
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const mimeType =
-        typeof MediaRecorder.isTypeSupported === 'function' &&
-        MediaRecorder.isTypeSupported('audio/webm')
-          ? 'audio/webm'
-          : undefined
-      const recorder = mimeType
-        ? new MediaRecorder(stream, { mimeType })
-        : new MediaRecorder(stream)
+      const recorderResult = createPreferredAudioRecorder(stream, MediaRecorder)
+
+      if (recorderResult.kind !== 'ready') {
+        stream.getTracks().forEach((track) => track.stop())
+
+        if (replacementRecoveryEntry) {
+          setPersistError(
+            'A new recording could not start in this browser. The existing recording stays on this device.',
+          )
+          return
+        }
+
+        await handleSwitchToText('voice-unsupported')
+        return
+      }
+
+      const recorder = recorderResult.recorder
 
       discardDraftOnStopRef.current = false
       recordedChunksRef.current = []
@@ -440,7 +556,7 @@ function NoteRoute() {
       recorder.ondataavailable = (event) => {
         const nextChunk = event.data
 
-        if (nextChunk && nextChunk.size > 0) {
+        if (nextChunk.size > 0) {
           recordedChunksRef.current.push(nextChunk)
         }
       }
@@ -451,6 +567,7 @@ function NoteRoute() {
           void (async () => {
             mediaRecorderRef.current = null
             setIsRecording(false)
+            resetRecordingTimer()
             stream.getTracks().forEach((track) => track.stop())
             streamRef.current = null
 
@@ -464,7 +581,8 @@ function NoteRoute() {
             })
 
             const audioBlob = new Blob(recordedChunksRef.current, {
-              type: recorder.mimeType || 'audio/webm',
+              type:
+                recorder.mimeType || recorderResult.mimeType || 'audio/webm',
             })
             recordedChunksRef.current = []
 
@@ -477,7 +595,7 @@ function NoteRoute() {
                 return
               }
 
-              const mutation = commitEntry((current) => ({
+              const retryMutation = commitEntry((current) => ({
                 ...current,
                 audioFileId: null,
                 hasAudio: false,
@@ -487,7 +605,7 @@ function NoteRoute() {
                 updatedAt: Date.now(),
               }))
 
-              void mutation?.persisted
+              void retryMutation?.persisted
               return
             }
 
@@ -533,7 +651,7 @@ function NoteRoute() {
                   ? error.message
                   : 'Recorded audio could not be stored on this device.',
               )
-              const mutation = commitEntry((current) => ({
+              const retryMutation = commitEntry((current) => ({
                 ...current,
                 audioFileId: null,
                 hasAudio: false,
@@ -543,7 +661,7 @@ function NoteRoute() {
                 updatedAt: Date.now(),
               }))
 
-              void mutation?.persisted
+              void retryMutation?.persisted
             }
           })()
         },
@@ -551,6 +669,8 @@ function NoteRoute() {
       )
 
       recorder.start()
+      setRecordingStartedAt(Date.now())
+      setRecordingElapsedMs(0)
       setIsRecording(true)
       const mutation = commitEntry((current) => ({
         ...current,
@@ -560,48 +680,70 @@ function NoteRoute() {
       }))
 
       void mutation?.persisted
-    } catch {
+    } catch (error) {
+      const fallbackReason = classifyVoiceCaptureError(error)
+
       if (replacementRecoveryEntry) {
         setPersistError(
-          'A new recording could not start. The existing recording stays on this device.',
+          fallbackReason === 'mic-denied'
+            ? 'Microphone access was denied for a new recording. The existing recording stays on this device.'
+            : 'A new recording could not start in this browser. The existing recording stays on this device.',
         )
         return
       }
 
-      await handleSwitchToText()
+      await handleSwitchToText(fallbackReason)
     }
-  }, [commitEntry, handleSwitchToText, initializeDraft, store])
+  }, [commitEntry, handleSwitchToText, initializeDraft, resetRecordingTimer, store])
+
+  const requestRecordingStart = useCallback(
+    async ({ disclosureAcknowledged = false }: { disclosureAcknowledged?: boolean } = {}) => {
+      if (isDeletingStoredAudio || isDeletingEntry) {
+        return
+      }
+
+      const currentEntry = draftControllerRef.current?.getCurrent()
+
+      if (!currentEntry) {
+        return
+      }
+
+      if (
+        !disclosureAcknowledged &&
+        currentEntry.status === 'draft_local' &&
+        !currentEntry.hasAudio &&
+        !hasAcknowledgedVoiceCaptureDisclosure()
+      ) {
+        setPendingConfirmation('voice_capture_disclosure')
+        return
+      }
+
+      if (currentEntry.hasAudio) {
+        setPendingConfirmation('replace_recording')
+        return
+      }
+
+      await startRecordingSession()
+    },
+    [isDeletingEntry, isDeletingStoredAudio, startRecordingSession],
+  )
 
   const handleStartRecording = useCallback(async () => {
-    if (isDeletingStoredAudio) {
-      return
-    }
-
-    const currentEntry = draftControllerRef.current?.getCurrent()
-
-    if (!currentEntry) {
-      return
-    }
-
-    if (currentEntry.hasAudio) {
-      setPendingConfirmation('replace_recording')
-      return
-    }
-
-    await startRecordingSession()
-  }, [isDeletingStoredAudio, startRecordingSession])
+    await requestRecordingStart()
+  }, [requestRecordingStart])
 
   const handleStopRecording = useCallback(() => {
-    if (isDeletingStoredAudio) {
+    if (isDeletingStoredAudio || isDeletingEntry) {
       return
     }
 
     setIsRecording(false)
+    resetRecordingTimer()
     const mutation = updateEntry({ status: 'processing' })
     void mutation?.persisted
-    mediaRecorderRef.current?.requestData?.()
+    mediaRecorderRef.current?.requestData()
     mediaRecorderRef.current?.stop()
-  }, [isDeletingStoredAudio, updateEntry])
+  }, [isDeletingEntry, isDeletingStoredAudio, resetRecordingTimer, updateEntry])
 
   return (
     <>
@@ -650,6 +792,7 @@ function NoteRoute() {
                     : 'transcript_only'
                 }
                 canDiscard={entry.status !== 'saved_local'}
+                canDeleteEntry={entry.status === 'saved_local'}
                 canDeleteStoredAudio={
                   entry.hasAudio &&
                   entry.storageMode === 'transcript_plus_audio' &&
@@ -661,11 +804,20 @@ function NoteRoute() {
                   !entry.hasAudio &&
                   !isRecording
                 }
+                editorPresenceNotice={
+                  isOpenInAnotherTab
+                    ? 'This note is also open in another tab on this device. Keep one tab as the editing source so a newer local draft is not overwritten.'
+                    : undefined
+                }
                 entry={entry}
                 fallbackNotice={fallbackNotice}
+                isDeletingEntry={isDeletingEntry}
                 isDeletingStoredAudio={isDeletingStoredAudio}
                 isRecording={isRecording}
                 mode={mode}
+                onDeleteEntry={() => {
+                  setPendingConfirmation('delete_entry')
+                }}
                 onDeleteStoredAudio={() => {
                   setPendingConfirmation('delete_stored_audio')
                 }}
@@ -673,7 +825,7 @@ function NoteRoute() {
                   void handleDiscardDraft()
                 }}
                 onSave={() => {
-                  if (!isDeletingStoredAudio) {
+                  if (!isDeletingStoredAudio && !isDeletingEntry) {
                     void handleSave()
                   }
                 }}
@@ -682,20 +834,21 @@ function NoteRoute() {
                 }}
                 onStopRecording={handleStopRecording}
                 onSwitchToText={() => {
-                  if (!isDeletingStoredAudio) {
+                  if (!isDeletingStoredAudio && !isDeletingEntry) {
                     void handleSwitchToText()
                   }
                 }}
                 onTitleChange={(value) => {
-                  if (!isDeletingStoredAudio) {
+                  if (!isDeletingStoredAudio && !isDeletingEntry) {
                     void updateEntry({ title: value })
                   }
                 }}
                 onTranscriptChange={(value) => {
-                  if (!isDeletingStoredAudio) {
+                  if (!isDeletingStoredAudio && !isDeletingEntry) {
                     void updateEntry({ transcript: value })
                   }
                 }}
+                recordingDurationLabel={formatRecordingDuration(recordingElapsedMs)}
               />
             )}
           </div>
@@ -708,27 +861,70 @@ function NoteRoute() {
         </section>
       </main>
       <ConfirmationSheet
-        cancelLabel="Cancel"
         confirmLabel={
-          pendingConfirmation === 'replace_recording'
+          pendingConfirmation === 'delete_entry'
+            ? 'Delete note'
+            : pendingConfirmation === 'voice_capture_disclosure'
+            ? 'Continue to microphone'
+            : pendingConfirmation === 'replace_recording'
             ? 'Replace recording'
             : 'Remove audio'
         }
         confirmTone={
-          pendingConfirmation === 'replace_recording' ? 'default' : 'destructive'
+          pendingConfirmation === 'delete_entry' ||
+          pendingConfirmation === 'delete_stored_audio'
+            ? 'destructive'
+            : 'default'
         }
         description={
-          pendingConfirmation === 'replace_recording'
+          pendingConfirmation === 'delete_entry'
+            ? 'This removes the note text, transcript, and any retained audio from this device.'
+            : pendingConfirmation === 'voice_capture_disclosure'
+            ? 'Voice capture is optional. Review what happens before this browser asks for microphone access.'
+            : pendingConfirmation === 'replace_recording'
             ? 'Your current recording for this note will be removed and replaced on this device. Existing note text stays unless you change it.'
             : 'This removes the saved recording from this device. Your note text and transcript stay on this device.'
         }
-        isConfirming={isDeletingStoredAudio}
+        details={
+          pendingConfirmation === 'voice_capture_disclosure'
+            ? [
+                'The microphone is only used while you choose to record in this open tab.',
+                'Audio stays on this device for review until you remove it or delete the note.',
+                'This version does not send audio or notes to cloud sync or a transcription provider.',
+              ]
+            : undefined
+        }
+        isConfirming={
+          pendingConfirmation === 'delete_entry'
+            ? isDeletingEntry
+            : pendingConfirmation === 'delete_stored_audio'
+              ? isDeletingStoredAudio
+              : false
+        }
         onCancel={() => {
-          if (!isDeletingStoredAudio) {
+          if (pendingConfirmation === 'voice_capture_disclosure') {
+            setPendingConfirmation(null)
+            return
+          }
+
+          if (!isDeletingEntry && !isDeletingStoredAudio) {
             setPendingConfirmation(null)
           }
         }}
         onConfirm={() => {
+          if (pendingConfirmation === 'delete_entry') {
+            setPendingConfirmation(null)
+            void handleDeleteEntry()
+            return
+          }
+
+          if (pendingConfirmation === 'voice_capture_disclosure') {
+            markVoiceCaptureDisclosureAcknowledged()
+            setPendingConfirmation(null)
+            void requestRecordingStart({ disclosureAcknowledged: true })
+            return
+          }
+
           if (pendingConfirmation === 'replace_recording') {
             setPendingConfirmation(null)
             void startRecordingSession()
@@ -740,9 +936,18 @@ function NoteRoute() {
         }}
         open={pendingConfirmation !== null}
         title={
-          pendingConfirmation === 'replace_recording'
+          pendingConfirmation === 'delete_entry'
+            ? 'Delete this note from this device?'
+            : pendingConfirmation === 'voice_capture_disclosure'
+            ? 'Before you use the microphone'
+            : pendingConfirmation === 'replace_recording'
             ? 'Replace this recording?'
             : 'Remove stored audio?'
+        }
+        cancelLabel={
+          pendingConfirmation === 'voice_capture_disclosure'
+            ? 'Not now'
+            : 'Cancel'
         }
       />
     </>

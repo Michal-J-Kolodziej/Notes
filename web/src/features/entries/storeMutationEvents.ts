@@ -57,7 +57,7 @@ function isMutationMessage(value: unknown): value is EntryStoreMutationMessage {
 
 function rememberMessageId(
   seenMessageIds: Set<string>,
-  messageOrder: string[],
+  messageOrder: Array<string>,
   messageId: string,
 ) {
   if (seenMessageIds.has(messageId)) {
@@ -126,7 +126,7 @@ export function subscribeToForeignEntryStoreMutations(
   }
 
   const seenMessageIds = new Set<string>()
-  const messageOrder: string[] = []
+  const messageOrder: Array<string> = []
 
   const handleMessage = (value: unknown) => {
     if (!isMutationMessage(value) || value.sourceId === getSourceId()) {

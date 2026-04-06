@@ -9,6 +9,7 @@ import appCss from '~/styles/app.css?url'
 import { EntryStoreProvider } from '~/features/entries'
 import { AppPlatformEffects } from '~/features/pwa/AppPlatformEffects'
 import { ConnectionStatusBanner } from '~/features/pwa/ConnectionStatusBanner'
+import { AppSessionRootProvider, OptionalClerkProvider } from '~/lib/auth'
 
 export const Route = createRootRoute({
   head: () => ({
@@ -66,11 +67,15 @@ export const Route = createRootRoute({
 function RootComponent() {
   return (
     <RootDocument>
-      <AppPlatformEffects />
-      <ConnectionStatusBanner />
-      <EntryStoreProvider>
-        <Outlet />
-      </EntryStoreProvider>
+      <OptionalClerkProvider>
+        <AppPlatformEffects />
+        <ConnectionStatusBanner />
+        <AppSessionRootProvider>
+          <EntryStoreProvider>
+            <Outlet />
+          </EntryStoreProvider>
+        </AppSessionRootProvider>
+      </OptionalClerkProvider>
     </RootDocument>
   )
 }

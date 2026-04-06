@@ -4,13 +4,17 @@ interface CaptureScreenProps {
   audioPlaybackUrl?: string
   audioReviewState: 'loading' | 'ready' | 'transcript_only' | 'unavailable'
   canDiscard: boolean
+  canDeleteEntry?: boolean
   canDeleteStoredAudio: boolean
   canSwitchToText: boolean
+  editorPresenceNotice?: string
   entry: EntryRecord
+  isDeletingEntry?: boolean
   fallbackNotice?: string
   isDeletingStoredAudio: boolean
   isRecording: boolean
   mode: 'text' | 'voice'
+  onDeleteEntry?: () => void
   onDeleteStoredAudio: () => void
   onDiscardDraft: () => void
   onSave: () => void
@@ -19,19 +23,24 @@ interface CaptureScreenProps {
   onSwitchToText: () => void
   onTitleChange: (value: string) => void
   onTranscriptChange: (value: string) => void
+  recordingDurationLabel: string
 }
 
 export function CaptureScreen({
   audioPlaybackUrl,
   audioReviewState,
   canDiscard,
+  canDeleteEntry = false,
   canDeleteStoredAudio,
   canSwitchToText,
+  editorPresenceNotice,
   entry,
   fallbackNotice,
+  isDeletingEntry = false,
   isDeletingStoredAudio,
   isRecording,
   mode,
+  onDeleteEntry,
   onDeleteStoredAudio,
   onDiscardDraft,
   onSave,
@@ -40,8 +49,14 @@ export function CaptureScreen({
   onSwitchToText,
   onTitleChange,
   onTranscriptChange,
+  recordingDurationLabel,
 }: CaptureScreenProps) {
-  const isInteractionLocked = isDeletingStoredAudio
+  const isInteractionLocked = isDeletingStoredAudio || isDeletingEntry
+  const showVoicePermissionDisclosure =
+    mode === 'voice' &&
+    entry.status === 'draft_local' &&
+    !entry.hasAudio &&
+    !isRecording
   const statusLabel =
     entry.status === 'saved_local'
       ? 'Saved on this device'
@@ -71,6 +86,11 @@ export function CaptureScreen({
           {fallbackNotice}
         </div>
       ) : null}
+      {editorPresenceNotice ? (
+        <div className="mt-4 rounded-[1.25rem] border border-[rgba(196,148,59,0.2)] bg-[rgba(196,148,59,0.08)] px-4 py-3 text-sm leading-6 text-[var(--ink)]">
+          {editorPresenceNotice}
+        </div>
+      ) : null}
 
       <label className="mt-5 block">
         <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">
@@ -87,10 +107,35 @@ export function CaptureScreen({
 
       {mode === 'voice' ? (
         <div className="mt-5 rounded-[1.25rem] border border-[rgba(58,34,29,0.08)] bg-[rgba(255,255,255,0.82)] p-4">
-          <p className="text-sm leading-6 text-[var(--muted)]">
-            Your recording stays on this device so you can review it after you
-            stop. It is not synced or shared in this local-first stage.
-          </p>
+          {showVoicePermissionDisclosure ? (
+            <div className="rounded-[1rem] border border-[rgba(230,113,96,0.16)] bg-[rgba(230,113,96,0.07)] px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+                Before the browser asks for microphone access
+              </p>
+              <p className="mt-2 text-sm leading-6 text-[var(--ink)]">
+                The microphone is used only while you actively record this
+                note.
+              </p>
+              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                Audio stays on this device in the current local-first stage and
+                is not backed up or synced to another device yet.
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm leading-6 text-[var(--muted)]">
+              Your recording stays on this device so you can review it after
+              you stop. It is not synced or shared in this local-first stage.
+            </p>
+          )}
+          {isRecording ? (
+            <p
+              aria-live="polite"
+              className="mt-3 text-sm font-semibold text-[var(--ink)]"
+              role="status"
+            >
+              Recording now {recordingDurationLabel}
+            </p>
+          ) : null}
           <div className="mt-4 flex flex-col gap-3 sm:flex-row">
             {isRecording ? (
               <button
@@ -200,8 +245,8 @@ export function CaptureScreen({
           Save locally
         </button>
         <p className="text-sm leading-6 text-[var(--muted)]">
-          This proof of concept keeps notes on this device first and makes state
-          visible instead of pretending sync already exists.
+          Notes stay on this device first. Cloud backup is not active yet, so
+          this app keeps that boundary visible.
         </p>
       </div>
 
@@ -213,6 +258,17 @@ export function CaptureScreen({
           type="button"
         >
           Discard draft
+        </button>
+      ) : null}
+
+      {canDeleteEntry && onDeleteEntry ? (
+        <button
+          className="mt-4 inline-flex min-h-12 items-center justify-center rounded-[1rem] border border-[rgba(178,57,38,0.18)] bg-[rgba(178,57,38,0.06)] px-4 py-3 text-sm font-semibold text-[var(--ink)] disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={isInteractionLocked}
+          onClick={onDeleteEntry}
+          type="button"
+        >
+          {isDeletingEntry ? 'Deleting note...' : 'Delete note'}
         </button>
       ) : null}
     </section>

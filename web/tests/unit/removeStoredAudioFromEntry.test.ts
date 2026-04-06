@@ -21,7 +21,7 @@ describe('removeStoredAudioFromCurrentEntry', () => {
         status: 'saved_local',
         storageMode: 'transcript_plus_audio',
       }),
-      deleteEntry: vi.fn(async () => {}),
+      deleteEntry: vi.fn(() => Promise.resolve()),
       saveEntry: vi.fn(async (entry) => {
         controllerWrites.push(structuredClone(entry))
         saveCalls += 1
@@ -42,7 +42,7 @@ describe('removeStoredAudioFromCurrentEntry', () => {
     }))
 
     const store = {
-      saveEntry: vi.fn(async (entry) => structuredClone(entry)),
+      saveEntry: vi.fn((entry) => Promise.resolve(structuredClone(entry))),
     }
 
     const removalPromise = removeStoredAudioFromCurrentEntry({
@@ -87,17 +87,17 @@ describe('removeStoredAudioFromCurrentEntry', () => {
     })
     const controller = createEntryDraftController({
       initialEntry,
-      deleteEntry: vi.fn(async () => {}),
-      saveEntry: vi.fn(async (entry) => structuredClone(entry)),
+      deleteEntry: vi.fn(() => Promise.resolve()),
+      saveEntry: vi.fn((entry) => Promise.resolve(structuredClone(entry))),
     })
 
     await expect(
       removeStoredAudioFromCurrentEntry({
         controller,
         store: {
-          saveEntry: vi.fn(async () => {
-            throw new Error('IndexedDB write failed')
-          }),
+          saveEntry: vi.fn(() =>
+            Promise.reject(new Error('IndexedDB write failed')),
+          ),
         },
       }),
     ).rejects.toThrow(/indexeddb write failed/i)

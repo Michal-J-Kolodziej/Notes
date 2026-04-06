@@ -6,7 +6,7 @@ export function ConnectionStatusBanner() {
       return true
     }
 
-    return navigator.onLine
+    return navigator.onLine !== false
   })
 
   useEffect(() => {

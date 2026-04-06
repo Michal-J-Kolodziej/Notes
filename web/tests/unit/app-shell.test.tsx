@@ -44,4 +44,32 @@ describe('HomeScreen', () => {
       screen.getByRole('button', { name: /not now/i }),
     ).toBeInTheDocument()
   })
+
+  it('renders visible guest-session identity copy when session details are available', () => {
+    render(
+      <HomeScreen
+        sessionSummary={{
+          detail:
+            'This device is using a durable guest session. Notes stay local-first and are not backed up to the cloud yet.',
+          heading: 'Guest mode on this device',
+          sessionLabel: 'AB12CD34',
+          statusLabel: 'Local only',
+        }}
+      />,
+    )
+
+    expect(
+      screen.getByText(/guest mode on this device/i),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/ab12cd34/i)).toBeInTheDocument()
+    expect(screen.getByText(/local only/i)).toBeInTheDocument()
+  })
+
+  it('renders account controls when provided', () => {
+    render(<HomeScreen accountControls={<button type="button">Sign in now</button>} />)
+
+    expect(
+      screen.getByRole('button', { name: /sign in now/i }),
+    ).toBeInTheDocument()
+  })
 })

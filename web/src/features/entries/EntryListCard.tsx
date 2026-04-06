@@ -1,8 +1,8 @@
-import type { EntryRecord } from './types'
 import {
   formatEntryUpdatedAtLabel,
   formatEntryUpdatedAtTitle,
 } from './entryTime'
+import type { EntryRecord } from './types'
 
 function getEntryStatusLabel(entry: EntryRecord) {
   switch (entry.status) {

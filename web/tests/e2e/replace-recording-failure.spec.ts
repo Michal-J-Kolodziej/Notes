@@ -1,21 +1,26 @@
 import { expect, test } from './helpers/localEntryDb'
 
+const DISCLOSURE_KEY = 'notes:voice-capture-disclosure-v1'
+
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
-    if (!navigator.mediaDevices) {
-      Object.defineProperty(navigator, 'mediaDevices', {
-        configurable: true,
-        value: {},
-      })
-    }
+    Object.defineProperty(navigator, 'mediaDevices', {
+      configurable: true,
+      value: {},
+    })
 
     Object.defineProperty(navigator.mediaDevices, 'getUserMedia', {
       configurable: true,
-      value: async () => {
-        throw new Error('Microphone permission denied for replacement')
-      },
+      value: () =>
+        Promise.reject(new Error('Microphone permission denied for replacement')),
     })
   })
+
+  await page.addInitScript((storageKey) => {
+    try {
+      window.localStorage.setItem(storageKey, 'accepted')
+    } catch {}
+  }, DISCLOSURE_KEY)
 })
 
 test('failed rerecord leaves the previous stored audio intact', async ({

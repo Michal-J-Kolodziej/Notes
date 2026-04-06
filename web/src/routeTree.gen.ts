@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SearchRouteImport } from './routes/search'
 import { Route as RecentRouteImport } from './routes/recent'
 import { Route as DraftsRouteImport } from './routes/drafts'
 import { Route as IndexRouteImport } from './routes/index'
@@ -18,6 +19,11 @@ import { Route as NoteNoteIdRouteImport } from './routes/note/$noteId'
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RecentRoute = RecentRouteImport.update({
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/drafts': typeof DraftsRoute
   '/recent': typeof RecentRoute
+  '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/note/$noteId': typeof NoteNoteIdRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/drafts': typeof DraftsRoute
   '/recent': typeof RecentRoute
+  '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/note/$noteId': typeof NoteNoteIdRoute
 }
@@ -60,21 +68,36 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/drafts': typeof DraftsRoute
   '/recent': typeof RecentRoute
+  '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/note/$noteId': typeof NoteNoteIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/drafts' | '/recent' | '/settings' | '/note/$noteId'
+  fullPaths:
+    | '/'
+    | '/drafts'
+    | '/recent'
+    | '/search'
+    | '/settings'
+    | '/note/$noteId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/drafts' | '/recent' | '/settings' | '/note/$noteId'
-  id: '__root__' | '/' | '/drafts' | '/recent' | '/settings' | '/note/$noteId'
+  to: '/' | '/drafts' | '/recent' | '/search' | '/settings' | '/note/$noteId'
+  id:
+    | '__root__'
+    | '/'
+    | '/drafts'
+    | '/recent'
+    | '/search'
+    | '/settings'
+    | '/note/$noteId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DraftsRoute: typeof DraftsRoute
   RecentRoute: typeof RecentRoute
+  SearchRoute: typeof SearchRoute
   SettingsRoute: typeof SettingsRoute
   NoteNoteIdRoute: typeof NoteNoteIdRoute
 }
@@ -86,6 +109,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/recent': {
@@ -123,6 +153,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DraftsRoute: DraftsRoute,
   RecentRoute: RecentRoute,
+  SearchRoute: SearchRoute,
   SettingsRoute: SettingsRoute,
   NoteNoteIdRoute: NoteNoteIdRoute,
 }
@@ -131,10 +162,11 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { startInstance } from './start.ts'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

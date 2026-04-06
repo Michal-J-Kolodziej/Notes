@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { AppInstallState } from '~/features/pwa/useAppInstallPrompt'
+import type { AppSessionSummary } from '~/lib/auth'
 
 function ActionLink({
   children,
@@ -42,9 +43,13 @@ function NavLink({
 }
 
 export function HomeScreen({
+  accountControls,
   installState = { kind: 'hidden' },
+  sessionSummary,
 }: {
+  accountControls?: ReactNode
   installState?: AppInstallState
+  sessionSummary?: AppSessionSummary
 }) {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-[34rem] flex-col gap-6 px-4 py-6 sm:px-6">
@@ -59,6 +64,41 @@ export function HomeScreen({
           Speak it, type it, save it, and come back to it later without losing
           the thread.
         </p>
+
+        {sessionSummary ? (
+          <div className="mt-5 rounded-[1.35rem] border border-[rgba(58,34,29,0.1)] bg-white/82 p-4 shadow-[0_12px_30px_rgba(40,28,25,0.06)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
+              Identity
+            </p>
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <p className="text-base font-semibold text-[var(--ink)]">
+                {sessionSummary.heading}
+              </p>
+              <div className="flex flex-wrap justify-end gap-2">
+                <p className="rounded-full bg-[rgba(230,113,96,0.12)] px-3 py-1 text-[11px] font-semibold tracking-[0.08em] text-[var(--ink)]">
+                  {sessionSummary.statusLabel}
+                </p>
+                {sessionSummary.sessionLabel ? (
+                  <p className="rounded-full bg-[rgba(45,26,22,0.06)] px-3 py-1 text-[11px] font-semibold tracking-[0.18em] text-[var(--ink)]">
+                    {sessionSummary.sessionLabel}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+              {sessionSummary.detail}
+            </p>
+          </div>
+        ) : null}
+
+        {accountControls ? (
+          <div className="mt-4 rounded-[1.35rem] border border-[rgba(58,34,29,0.1)] bg-white/82 p-4 shadow-[0_12px_30px_rgba(40,28,25,0.06)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
+              Account
+            </p>
+            <div className="mt-3">{accountControls}</div>
+          </div>
+        ) : null}
 
         {installState.kind === 'installable' ? (
           <div className="mt-5 rounded-[1.35rem] border border-[rgba(58,34,29,0.1)] bg-white/82 p-4 shadow-[0_12px_30px_rgba(40,28,25,0.06)]">
@@ -138,9 +178,14 @@ export function HomeScreen({
             Settings
           </span>
         </NavLink>
-        <div className="rounded-[1.35rem] border border-dashed border-[rgba(58,34,29,0.14)] bg-white/55 p-4 text-sm leading-6 text-[var(--muted)]">
-          Calm by default. Built for a thumb, a voice, and a quick return later.
-        </div>
+        <NavLink href="/search">
+          <span className="text-sm font-medium text-[var(--muted)]">
+            Retrieval
+          </span>
+          <span className="text-lg font-semibold tracking-[-0.03em]">
+            Search
+          </span>
+        </NavLink>
       </section>
     </main>
   )

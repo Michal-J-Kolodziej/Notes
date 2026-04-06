@@ -1,8 +1,8 @@
 import type { EntryRecord, EntryStore } from './types'
 
 interface RemoveStoredAudioController {
-  flush(): Promise<void>
-  getCurrent(): EntryRecord | null
+  flush: () => Promise<void>
+  getCurrent: () => EntryRecord | null
 }
 
 interface RemoveStoredAudioOptions {

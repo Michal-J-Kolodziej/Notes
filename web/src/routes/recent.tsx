@@ -1,11 +1,13 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
+import type {EntryRecord} from '~/features/entries';
 import {
   EntryListCard,
+  
+  isSavedEntry,
   useEntryStore,
   useForeignEntryStoreMutationVersion,
-  useRelativeTimeNow,
-  type EntryRecord,
+  useRelativeTimeNow
 } from '~/features/entries'
 
 export const Route = createFileRoute('/recent')({
@@ -16,7 +18,7 @@ function RecentRoute() {
   const store = useEntryStore()
   const foreignMutationVersion = useForeignEntryStoreMutationVersion()
   const now = useRelativeTimeNow()
-  const [entries, setEntries] = useState<EntryRecord[]>([])
+  const [entries, setEntries] = useState<Array<EntryRecord>>([])
 
   useEffect(() => {
     let active = true
@@ -26,9 +28,7 @@ function RecentRoute() {
         return
       }
 
-      setEntries(
-        items.filter((item) => ['saved_local', 'saved_remote'].includes(item.status)),
-      )
+      setEntries(items.filter(isSavedEntry))
     })
 
     return () => {
@@ -46,8 +46,7 @@ function RecentRoute() {
           Your latest entries will land here.
         </h1>
         <p className="mt-3 text-[1rem] leading-7 text-[var(--muted)]">
-          The first implementation pass keeps this screen simple, local, and
-          thumb-readable.
+          Recent stays simple, local, and easy to scan with one hand.
         </p>
         <div className="mt-6 grid gap-3">
           {entries.length === 0 ? (
@@ -67,6 +66,12 @@ function RecentRoute() {
               </Link>
             ))
           )}
+          <Link
+            className="inline-flex rounded-full border border-[rgba(58,34,29,0.12)] bg-white/80 px-4 py-3 text-sm font-semibold text-[var(--ink)]"
+            to="/search"
+          >
+            Search local notes
+          </Link>
           <Link
             className="mt-2 inline-flex rounded-full border border-[rgba(58,34,29,0.12)] bg-white/80 px-4 py-3 text-sm font-semibold text-[var(--ink)]"
             to="/"
