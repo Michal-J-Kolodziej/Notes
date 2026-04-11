@@ -1,0 +1,53 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - banner [ref=e7]:
+      - generic [ref=e9]:
+        - link "Skip to main page content" [ref=e11] [cursor=pointer]:
+          - /url: "#mainContent"
+        - link "easyJet" [ref=e12] [cursor=pointer]:
+          - /url: javascript:void(0);
+          - img "easyJet" [ref=e13]
+        - navigation [ref=e14]:
+          - list:
+            - listitem [ref=e15]:
+              - link "Flight info" [ref=e17]:
+                - /url: javascript:void(0);
+            - listitem [ref=e18]:
+              - link "Holidays" [ref=e20] [cursor=pointer]:
+                - /url: https://www.easyjet.com/en/holidays
+            - listitem [ref=e21]:
+              - link "Cars/Extras" [ref=e23] [cursor=pointer]:
+                - /url: https://cars.easyjet.com/en?clientId=515749&utm_medium=meganav&utm_source=easyjet&utm_campaign=Car_Rental
+            - listitem [ref=e24]:
+              - link "Business" [ref=e26] [cursor=pointer]:
+                - /url: /en/business?link_meganav
+            - listitem [ref=e27]:
+              - link "Booking.com" [ref=e29] [cursor=pointer]:
+                - /url: https://www.booking.com/index.en-gb.html?aid=347810;label=EJ-main-nav
+            - listitem [ref=e30]:
+              - link "Manage Bookings" [ref=e32] [cursor=pointer]:
+                - /url: /en/MyEasyJet/ViewBooking
+        - navigation [ref=e33]:
+          - list:
+            - listitem [ref=e34]:
+              - link "Check In" [ref=e36] [cursor=pointer]:
+                - /url: javascript:void(0);
+            - listitem [ref=e37]:
+              - link "Sign in" [ref=e39] [cursor=pointer]:
+                - /url: javascript:void(0);
+            - listitem [ref=e40]:
+              - link "Help" [ref=e42] [cursor=pointer]:
+                - /url: javascript:void(0);
+            - listitem [ref=e43]:
+              - link "en-GB" [ref=e45] [cursor=pointer]:
+                - /url: javascript:void(0);
+      - generic [ref=e48]:
+        - heading [level=1]
+    - main [ref=e49]:
+      - generic [ref=e50]:
+        - img [ref=e55]
+        - generic [ref=e65]:
+          - text: In some instances last minute changes can occur to the terminal information displayed. Live updates are based on the information we have available at the time and may change as more information is made available to us. You must still check-in at the times printed on your booking confirmation unless you're informed to do otherwise by easyJet. See full
+          - link "list of flights." [ref=e66] [cursor=pointer]:
+            - /url: http://www.easyjet.com/en/flight-tracker/flights
+  - dialog

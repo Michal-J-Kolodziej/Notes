@@ -1,0 +1,15 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e4]:
+    - link "Home" [ref=e6] [cursor=pointer]:
+      - /url: https://www.schiphol.nl
+      - generic [ref=e7]: Home
+      - img [ref=e8]
+  - generic [ref=e14]:
+    - heading "One moment please" [level=1] [ref=e15]
+    - generic [ref=e16]:
+      - paragraph [ref=e17]: We are checking that your connection to Schiphol.nl is secure.
+      - generic [ref=e18]:
+        - main:
+          - generic:
+            - heading [level=2]
+            - paragraph

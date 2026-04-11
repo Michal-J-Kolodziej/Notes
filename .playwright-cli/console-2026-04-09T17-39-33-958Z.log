@@ -1,0 +1,17 @@
+[    1889ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:blank:0
+[    2078ms] [WARNING] unable to initialise datadog logger @ https://www.easyjet.com/ejcms/cache15m/bundles/scripts/angularej.js?v=mfvh4wC8Z8ztooflxhK1HOQnSlQ5jYEdWZlG1qUi5Go1:0
+[    2802ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://www.easyjet.com/ft/api/flights?lang=en&fn=EJU7838&date=2026-04-09&ft=departures:0
+[    4055ms] TypeError: Cannot read properties of undefined (reading 'clientHeight')
+    at HelpingHandSlider.IsWrappingTitle (https://www.easyjet.com/ejcms/cache15m/bundles/scripts/main3.js?v=qqv5ljR44j8OuNKp5ev-xKHOEkcowokVU-t5yKxmOlo1:15691:52)
+    at HelpingHandSlider.AnimateShow (https://www.easyjet.com/ejcms/cache15m/bundles/scripts/main3.js?v=qqv5ljR44j8OuNKp5ev-xKHOEkcowokVU-t5yKxmOlo1:15679:22)
+    at HelpingHandSlider.AnimateShowObject (https://www.easyjet.com/ejcms/cache15m/bundles/scripts/main3.js?v=qqv5ljR44j8OuNKp5ev-xKHOEkcowokVU-t5yKxmOlo1:15656:26)
+    at HelpingHandSlider.ShowObjectInternal (https://www.easyjet.com/ejcms/cache15m/bundles/scripts/main3.js?v=qqv5ljR44j8OuNKp5ev-xKHOEkcowokVU-t5yKxmOlo1:15587:30)
+    at https://www.easyjet.com/ejcms/cache15m/bundles/scripts/main3.js?v=qqv5ljR44j8OuNKp5ev-xKHOEkcowokVU-t5yKxmOlo1:15573:27
+    at HTMLDivElement.<anonymous> (https://www.easyjet.com/ejcms/cache15m/bundles/scripts/main3.js?v=qqv5ljR44j8OuNKp5ev-xKHOEkcowokVU-t5yKxmOlo1:15602:21)
+    at d.complete (https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js:4:6203)
+    at i (https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js:2:27449)
+    at Object.fireWith [as resolveWith] (https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js:2:28213)
+    at i (https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js:4:4485)
+[    7582ms] [WARNING] The resource https://cdn.optimizely.com/public/24938460681/s/easyjet.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://www.easyjet.com/en/flight-tracker/EJU7838?fd=2026-04-01:0
+[   16536ms] [WARNING] The resource https://cdn.optimizely.com/public/24938460681/s/easyjet.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://www.easyjet.com/en/flight-tracker/EJU7838?fd=2026-04-01:0
+[   66504ms] [WARNING] The resource https://cdn.optimizely.com/public/24938460681/s/easyjet.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://www.easyjet.com/en/flight-tracker/EJU7838?fd=2026-04-01:0
